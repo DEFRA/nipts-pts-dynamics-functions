@@ -46,6 +46,7 @@ extends:
     sqlProject: TRS
     appType: 'functionApp'
     appInstanceNumber: $(nc-region-id)07
+    scr: GH
     buildProjects: |
       **/*Functions.csproj
       **/*Tests.csproj
