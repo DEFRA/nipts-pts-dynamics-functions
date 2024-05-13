@@ -34,7 +34,7 @@ resources:
       ref: master
 
 variables:
-  APIName: Defra.PTS.Dynamics.Functions
+  APIName: nipts-pts-dynamics-functions
 
 extends:
   template: /templates/basic-webapp-deploy-pipeline.yaml@PipelineCommon
