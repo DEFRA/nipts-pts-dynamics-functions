@@ -31,10 +31,10 @@ resources:
     - repository: PipelineCommon
       name: DEFRA-TRD/Defra.TRD.Pipeline.Common
       type: git
-      ref: master
+      ref: JA/sonar-git
 
 variables:
-  APIName: nipts-pts-dynamics-functions #Defra.PTS.Dynamics.Functions
+  APIName: DEFRA_nipts-pts-dynamics-functions #Defra.PTS.Dynamics.Functions
 
 extends:
   template: /templates/basic-webapp-deploy-pipeline.yaml@PipelineCommon
