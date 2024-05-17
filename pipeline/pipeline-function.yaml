@@ -34,7 +34,7 @@ resources:
       ref: JA/sonar-git
 
 variables:
-  APIName: DEFRA_nipts-pts-dynamics-functions #Defra.PTS.Dynamics.Functions
+  APIName: 'nipts-pts-dynamics-functions' #Defra.PTS.Dynamics.Functions
 
 extends:
   template: /templates/basic-webapp-deploy-pipeline.yaml@PipelineCommon
