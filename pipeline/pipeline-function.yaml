@@ -32,7 +32,8 @@ resources:
       name: DEFRA-TRD/Defra.TRD.Pipeline.Common
       type: git
       ref: master
-
+      #ref: aj/net8-sonar-update
+      
 variables:
   APIName: DEFRA_nipts-pts-dynamics-functions
 
