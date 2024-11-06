@@ -131,8 +131,6 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
         [Test]
         public void GetOwnerModel_WhenValidData_ReturnsModel()
         {
-            Guid OwnerGuid = Guid.Empty;
-
             sut = new OwnerService(_OwnerRepository!.Object, _repoAddressService!.Object);
 
             var json = "{" +

@@ -34,7 +34,7 @@ namespace Defra.PTS.Common.Repositories.Implementation
 
         public async Task<bool> DoesAddresssExists(Guid addressId)
         {
-            return await userContext.Address.AnyAsync(a => a.Id == addressId);
+            return await userContext!.Address.AnyAsync(a => a.Id == addressId);
         }
         
         public async Task<(Guid?, Guid?, string)> GetUserDetails(Guid contactId)
