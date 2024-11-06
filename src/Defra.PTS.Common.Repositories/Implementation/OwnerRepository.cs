@@ -32,9 +32,9 @@ namespace Defra.PTS.Common.Repositories.Implementation
            return await userContext.Owner.AnyAsync(a => a.Email == ownerEmailAddress);
         }
 
-        public async Task<Owner> GetOwner(Guid ownerId)
+        public async Task<Owner?> GetOwner(Guid ownerId)
         {
-            return await userContext.Owner.FirstOrDefaultAsync(a => a.Id == ownerId);
+            return await userContext!.Owner.FirstOrDefaultAsync(a => a.Id == ownerId);
         }
     }
 }

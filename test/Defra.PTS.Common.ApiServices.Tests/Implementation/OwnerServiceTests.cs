@@ -162,7 +162,7 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
                 "}";
 
             var memoryStream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(json));
-            sut = new OwnerService(_OwnerRepository!.Object, _repoAddressService.Object);
+            sut = new OwnerService(_OwnerRepository!.Object, _repoAddressService!.Object);
             Assert.ThrowsAsync<UserFunctionException>(() => sut.GetOwnerModel(memoryStream));
         }
     }

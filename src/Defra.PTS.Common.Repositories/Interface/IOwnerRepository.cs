@@ -11,6 +11,6 @@ namespace Defra.PTS.Common.Repositories.Interface
     {
         Task<bool> DoesOwnerExists(string ownerEmailAddress);
 
-        Task<Entity.Owner> GetOwner(Guid ownerId);
+        Task<Entity.Owner?> GetOwner(Guid ownerId);
     }
 }

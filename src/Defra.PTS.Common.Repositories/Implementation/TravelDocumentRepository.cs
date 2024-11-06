@@ -26,9 +26,9 @@ namespace Defra.PTS.Common.Repositories.Implementation
         {
         }
 
-        public async Task<Entity.TravelDocument> GetTravelDocument(Guid? applicationId, Guid? ownerId, Guid? petId)
+        public async Task<Entity.TravelDocument?> GetTravelDocument(Guid? applicationId, Guid? ownerId, Guid? petId)
         {
-            return await travelDocumentContext.TravelDocument.FirstOrDefaultAsync(a => a.ApplicationId == applicationId && a.OwnerId == ownerId && a.PetId == petId);           
+            return await travelDocumentContext!.TravelDocument.FirstOrDefaultAsync(a => a.ApplicationId == applicationId && a.OwnerId == ownerId && a.PetId == petId);           
         }
     }
 }

@@ -27,9 +27,9 @@ namespace Defra.PTS.Common.Repositories.Implementation
         {
         }
 
-        public async Task<Entity.Address> GetAddress(Guid? addressId, AddressType addressType)
+        public async Task<Entity.Address?> GetAddress(Guid? addressId, AddressType addressType)
         {
-           return await addressContext.Address.FirstOrDefaultAsync(a => a.Id == addressId && a.AddressType == addressType.ToString() && a.IsActive == true);
+           return await addressContext!.Address.FirstOrDefaultAsync(a => a.Id == addressId && a.AddressType == addressType.ToString() && a.IsActive == true);
         }
     }
 }

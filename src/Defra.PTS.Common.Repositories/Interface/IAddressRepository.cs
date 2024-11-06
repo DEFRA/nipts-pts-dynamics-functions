@@ -11,6 +11,6 @@ namespace Defra.PTS.Common.Repositories.Interface
 {
     public interface IAddressRepository : IRepository<Entity.Address>
     {
-        Task<Entity.Address> GetAddress(Guid? addressId, AddressType addressType);
+        Task<Entity.Address?> GetAddress(Guid? addressId, AddressType addressType);
     }
 }
