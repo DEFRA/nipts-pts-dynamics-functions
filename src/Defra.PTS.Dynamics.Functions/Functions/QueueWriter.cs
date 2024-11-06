@@ -46,30 +46,22 @@ namespace Defra.PTS.Dynamics.Functions.Functions
             [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "writetoqueue")] HttpRequest req
             )
         {
-            string responseMessage = $"Added Message to Queue Successfully";
-            try
-            {                
-                var inputData = req?.Body;
-                if (inputData == null)
-                {
-                    throw new QueueWriterException("Invalid Queue message input, is NUll or Empty");
-                }
-
-                var applicationMessagetoSubmit = await _applicationService.GetApplicationQueueModel(inputData);
-                if(applicationMessagetoSubmit == null)
-                {
-                    throw new QueueWriterException("Invalid QueueMessage Model, is Null or Empty");
-                }
-
-                await _azureServiceBusService.SendMessageAsync(applicationMessagetoSubmit);
-
-                return new OkObjectResult(responseMessage);
-            }
-            catch (Exception ex)
+            string responseMessage = $"Added Message to Queue Successfully";       
+            var inputData = req?.Body;
+            if (inputData == null)
             {
-                _logger.LogError(ex, "An error occurred.");
-                throw;
+                throw new QueueWriterException("Invalid Queue message input, is NUll or Empty");
             }
+
+            var applicationMessagetoSubmit = await _applicationService.GetApplicationQueueModel(inputData);
+            if(applicationMessagetoSubmit == null)
+            {
+                throw new QueueWriterException("Invalid QueueMessage Model, is Null or Empty");
+            }
+
+            await _azureServiceBusService.SendMessageAsync(applicationMessagetoSubmit);
+
+            return new OkObjectResult(responseMessage);
         }
     }
 }
