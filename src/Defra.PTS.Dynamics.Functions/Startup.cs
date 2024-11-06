@@ -86,8 +86,7 @@ namespace Defra.PTS.Dynamics.Functions
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error Stack: " + ex.StackTrace);
-                Console.WriteLine("Exception Message: " + ex.Message);
+                Console.WriteLine("An error occurred: {0}", ex);
                 throw;
             }
         }

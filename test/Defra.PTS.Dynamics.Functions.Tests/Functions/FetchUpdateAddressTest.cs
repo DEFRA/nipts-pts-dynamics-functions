@@ -25,13 +25,13 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
     public class FetchUpdateAddressTest
     {
         private Mock<HttpRequest>? _mockRequest;
-        private Mock<IDynamicsService> _dynamicsServiceMock;
-        private Mock<IOptions<DynamicOptions>> _dynamicOptionsMock;
-        private Mock<IUserService> _userServiceMock;
-        private Mock<IKeyVaultAccess> _keyVaultAcessMock;
-        private Mock<HttpClient> _httpClientMock;
-        private Mock<ILogger<FetchUpdateAddress>> _loggerMock;
-        private FetchUpdateAddress _systemUnderTest;
+        private Mock<IDynamicsService>? _dynamicsServiceMock;
+        private Mock<IOptions<DynamicOptions>>? _dynamicOptionsMock;
+        private Mock<IUserService>? _userServiceMock;
+        private Mock<IKeyVaultAccess>? _keyVaultAcessMock;
+        private Mock<HttpClient>? _httpClientMock;
+        private Mock<ILogger<FetchUpdateAddress>>? _loggerMock;
+        private FetchUpdateAddress? _systemUnderTest;
 
         [SetUp]
         public void SetUp()
@@ -51,11 +51,11 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
         public void Run_WithInValidParameters_ThrowsInvalidUserInput_Exception()
         {
             var expectedResult = "Invalid user input, is NUll or Empty";
-            MemoryStream stream = null;
-            _mockRequest!.Setup(x => x.Body).Returns(stream);
+            MemoryStream? stream = null;
+            _mockRequest!.Setup(x => x.Body).Returns(stream!);
 
             // Act
-            var result = Assert.ThrowsAsync<UserFunctionException>(() => _systemUnderTest.FetchAndUpdateAddress(_mockRequest.Object));
+            var result = Assert.ThrowsAsync<UserFunctionException>(() => _systemUnderTest!.FetchAndUpdateAddress(_mockRequest.Object));
 
             // Assert
             Assert.That(result, Is.Not.Null);
@@ -89,11 +89,11 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
             };
 
             var expectedResult = "User does not exist for this contact: " + userRequest.ContactId.ToString();
-            _userServiceMock.Setup(a => a.GetUserRequestModel(It.IsAny<Stream>())).ReturnsAsync(userRequest);
+            _userServiceMock!.Setup(a => a.GetUserRequestModel(It.IsAny<Stream>())).ReturnsAsync(userRequest);
             _userServiceMock.Setup(a => a.DoesUserExists((Guid)userRequest.ContactId)).ReturnsAsync(false);
 
             // Act
-            var result = await _systemUnderTest.FetchAndUpdateAddress(_mockRequest.Object);
+            var result = await _systemUnderTest!.FetchAndUpdateAddress(_mockRequest.Object);
             var objectResult = result as ObjectResult;
 
             // Assert
@@ -131,16 +131,16 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
 
            var userDetails = (Guid.Parse("6B29FC40-CA47-1067-B31D-00DD010662DA"), Guid.Parse("6B29FC40-CA47-1067-B31D-00DD010662DA"), "test@email.com");
 
-           _userServiceMock.Setup(a => a.GetUserRequestModel(It.IsAny<Stream>())).ReturnsAsync(userRequest);
+           _userServiceMock!.Setup(a => a.GetUserRequestModel(It.IsAny<Stream>())).ReturnsAsync(userRequest);
            _userServiceMock.Setup(a => a.DoesUserExists((Guid)userRequest.ContactId)).ReturnsAsync(true);
            _userServiceMock.Setup(a => a.GetUserDetails((Guid)userRequest.ContactId)).Returns(userDetails);
            _userServiceMock.Setup(a => a.AddAddress(It.IsAny<UserRequest>())).ReturnsAsync(addressId);
            _userServiceMock.Setup(a => a.UpdateAddress(It.IsAny<UserRequest>(), It.IsAny<Guid>())).ReturnsAsync(addressId);
            _userServiceMock.Setup(a => a.UpdateUser(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), addressId)).ReturnsAsync(addressId);
 
-           _dynamicOptionsMock.Setup(a => a.Value).Returns(new DynamicOptions() { ApiVersion = "1.0", Authority = "authority", Scopes = "scope" });
-           _keyVaultAcessMock.Setup(a => a.GetSecretAsync(It.IsAny<string>())).ReturnsAsync(secretClientUrl);
-           _dynamicsServiceMock.Setup(ds => ds.GetTokenForClient(It.IsAny<string[]>())).ReturnsAsync("fakeAccessToken"); // Set up a fake access token
+           _dynamicOptionsMock!.Setup(a => a.Value).Returns(new DynamicOptions() { ApiVersion = "1.0", Authority = "authority", Scopes = "scope" });
+           _keyVaultAcessMock!.Setup(a => a.GetSecretAsync(It.IsAny<string>())).ReturnsAsync(secretClientUrl);
+           _dynamicsServiceMock!.Setup(ds => ds.GetTokenForClient(It.IsAny<string[]>())).ReturnsAsync("fakeAccessToken"); // Set up a fake access token
 
 
 
@@ -161,7 +161,7 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
            .ReturnsAsync(response);
 
            var httpClientMock = new HttpClient(handlerMock.Object);
-           _systemUnderTest = new FetchUpdateAddress(_loggerMock.Object, _dynamicsServiceMock.Object, _dynamicOptionsMock.Object, _userServiceMock.Object, _keyVaultAcessMock.Object, httpClientMock);
+           _systemUnderTest = new FetchUpdateAddress(_loggerMock!.Object, _dynamicsServiceMock.Object, _dynamicOptionsMock.Object, _userServiceMock.Object, _keyVaultAcessMock.Object, httpClientMock);
 
            // Act
            var result = await _systemUnderTest.FetchAndUpdateAddress(_mockRequest.Object);
@@ -210,15 +210,15 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
             };
             Guid addressId = Guid.NewGuid();
 
-            _userServiceMock.Setup(a => a.GetUserRequestModel(It.IsAny<Stream>())).ReturnsAsync(userRequest);
+            _userServiceMock!.Setup(a => a.GetUserRequestModel(It.IsAny<Stream>())).ReturnsAsync(userRequest);
             _userServiceMock.Setup(a => a.DoesUserExists((Guid)userRequest.ContactId)).ReturnsAsync(true);
-            _userServiceMock.Setup(a => a.GetUserDetails((Guid)userRequest.ContactId)).Returns((null, null, null));
+            _userServiceMock.Setup(a => a.GetUserDetails((Guid)userRequest.ContactId)).Returns((null!, null!, null!));
             _userServiceMock.Setup(a => a.AddAddress(It.IsAny<UserRequest>())).ReturnsAsync(addressId);
             _userServiceMock.Setup(a => a.UpdateUser(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), addressId)).ReturnsAsync(Guid.NewGuid());
 
-            _dynamicOptionsMock.Setup(a => a.Value).Returns(new DynamicOptions() { ApiVersion = "1.0", Authority = "authority", Scopes = "scope" });
-            _keyVaultAcessMock.Setup(a => a.GetSecretAsync(It.IsAny<string>())).ReturnsAsync(secretClientUrl);
-            _dynamicsServiceMock.Setup(ds => ds.GetTokenForClient(It.IsAny<string[]>())).ReturnsAsync("fakeAccessToken"); // Set up a fake access token
+            _dynamicOptionsMock!.Setup(a => a.Value).Returns(new DynamicOptions() { ApiVersion = "1.0", Authority = "authority", Scopes = "scope" });
+            _keyVaultAcessMock!.Setup(a => a.GetSecretAsync(It.IsAny<string>())).ReturnsAsync(secretClientUrl);
+            _dynamicsServiceMock!.Setup(ds => ds.GetTokenForClient(It.IsAny<string[]>())).ReturnsAsync("fakeAccessToken"); // Set up a fake access token
             
 
 
@@ -239,7 +239,7 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
             .ReturnsAsync(response);
 
             var httpClientMock = new HttpClient(handlerMock.Object);
-            _systemUnderTest = new FetchUpdateAddress(_loggerMock.Object, _dynamicsServiceMock.Object, _dynamicOptionsMock.Object, _userServiceMock.Object, _keyVaultAcessMock.Object, httpClientMock);
+            _systemUnderTest = new FetchUpdateAddress(_loggerMock!.Object, _dynamicsServiceMock.Object, _dynamicOptionsMock.Object, _userServiceMock.Object, _keyVaultAcessMock.Object, httpClientMock);
 
             // Act
             var result = await _systemUnderTest.FetchAndUpdateAddress(_mockRequest.Object);
@@ -291,14 +291,14 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
             
             Guid addressId = Guid.NewGuid();
 
-            _userServiceMock.Setup(a => a.GetUserRequestModel(It.IsAny<Stream>())).ReturnsAsync(userRequest);
+            _userServiceMock!.Setup(a => a.GetUserRequestModel(It.IsAny<Stream>())).ReturnsAsync(userRequest);
             _userServiceMock.Setup(a => a.DoesUserExists((Guid)userRequest.ContactId)).ReturnsAsync(true);
             _userServiceMock.Setup(a => a.AddAddress(It.IsAny<UserRequest>())).ReturnsAsync(addressId);
             _userServiceMock.Setup(a => a.UpdateUser(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), addressId)).ReturnsAsync(Guid.NewGuid());
 
-            _dynamicOptionsMock.Setup(a => a.Value).Returns(new DynamicOptions() { ApiVersion = "1.0", Authority = "authority", Scopes = "scope" });
-            _keyVaultAcessMock.Setup(a => a.GetSecretAsync(It.IsAny<string>())).ReturnsAsync(secretClientUrl);
-            _dynamicsServiceMock.Setup(ds => ds.GetTokenForClient(It.IsAny<string[]>())).ReturnsAsync("fakeAccessToken"); // Set up a fake access token
+            _dynamicOptionsMock!.Setup(a => a.Value).Returns(new DynamicOptions() { ApiVersion = "1.0", Authority = "authority", Scopes = "scope" });
+            _keyVaultAcessMock!.Setup(a => a.GetSecretAsync(It.IsAny<string>())).ReturnsAsync(secretClientUrl);
+            _dynamicsServiceMock!.Setup(ds => ds.GetTokenForClient(It.IsAny<string[]>())).ReturnsAsync("fakeAccessToken"); // Set up a fake access token
 
 
 
@@ -319,7 +319,7 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
             .ReturnsAsync(response);
 
             var httpClientMock = new HttpClient(handlerMock.Object);
-            _systemUnderTest = new FetchUpdateAddress(_loggerMock.Object, _dynamicsServiceMock.Object, _dynamicOptionsMock.Object, _userServiceMock.Object, _keyVaultAcessMock.Object, httpClientMock);
+            _systemUnderTest = new FetchUpdateAddress(_loggerMock!.Object, _dynamicsServiceMock.Object, _dynamicOptionsMock.Object, _userServiceMock.Object, _keyVaultAcessMock.Object, httpClientMock);
 
             // Act
             var result = Assert.ThrowsAsync<UserFunctionException>(() => _systemUnderTest.FetchAndUpdateAddress(_mockRequest.Object));
@@ -367,14 +367,14 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
 
             Guid addressId = Guid.NewGuid();
 
-            _userServiceMock.Setup(a => a.GetUserRequestModel(It.IsAny<Stream>())).ReturnsAsync(userRequest);
+            _userServiceMock!.Setup(a => a.GetUserRequestModel(It.IsAny<Stream>())).ReturnsAsync(userRequest);
             _userServiceMock.Setup(a => a.DoesUserExists((Guid)userRequest.ContactId)).ReturnsAsync(true);
             _userServiceMock.Setup(a => a.AddAddress(It.IsAny<UserRequest>())).ReturnsAsync(addressId);
             _userServiceMock.Setup(a => a.UpdateUser(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), addressId)).ReturnsAsync(Guid.NewGuid());
 
-            _dynamicOptionsMock.Setup(a => a.Value).Returns(new DynamicOptions() { ApiVersion = "1.0", Authority = "authority", Scopes = "scope" });
-            _keyVaultAcessMock.Setup(a => a.GetSecretAsync(It.IsAny<string>())).ReturnsAsync(secretClientUrl);
-            _dynamicsServiceMock.Setup(ds => ds.GetTokenForClient(It.IsAny<string[]>())).ReturnsAsync("fakeAccessToken"); // Set up a fake access token
+            _dynamicOptionsMock!.Setup(a => a.Value).Returns(new DynamicOptions() { ApiVersion = "1.0", Authority = "authority", Scopes = "scope" });
+            _keyVaultAcessMock!.Setup(a => a.GetSecretAsync(It.IsAny<string>())).ReturnsAsync(secretClientUrl);
+            _dynamicsServiceMock!.Setup(ds => ds.GetTokenForClient(It.IsAny<string[]>())).ReturnsAsync("fakeAccessToken"); // Set up a fake access token
 
 
 
@@ -395,7 +395,7 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
             .ReturnsAsync(response);
 
             var httpClientMock = new HttpClient(handlerMock.Object);
-            _systemUnderTest = new FetchUpdateAddress(_loggerMock.Object, _dynamicsServiceMock.Object, _dynamicOptionsMock.Object, _userServiceMock.Object, _keyVaultAcessMock.Object, httpClientMock);
+            _systemUnderTest = new FetchUpdateAddress(_loggerMock!.Object, _dynamicsServiceMock.Object, _dynamicOptionsMock.Object, _userServiceMock.Object, _keyVaultAcessMock.Object, httpClientMock);
 
             // Act
             var result = Assert.ThrowsAsync<QueueReaderException>(() => _systemUnderTest.FetchAndUpdateAddress(_mockRequest.Object));

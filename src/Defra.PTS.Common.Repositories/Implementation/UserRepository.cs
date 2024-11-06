@@ -1,4 +1,4 @@
-﻿using entity = Defra.PTS.Common.Entities;
+﻿using Entity = Defra.PTS.Common.Entities;
 using Defra.PTS.Common.Repositories.Interface;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -11,10 +11,10 @@ using System.Diagnostics.CodeAnalysis;
 namespace Defra.PTS.Common.Repositories.Implementation
 {
     [ExcludeFromCodeCoverage]
-    public class UserRepository : Repository<entity.User>, IUserRepository
+    public class UserRepository : Repository<Entity.User>, IUserRepository
     {
 
-        private CommonDbContext userContext
+        private CommonDbContext? userContext
         {
             get
             {
@@ -28,7 +28,7 @@ namespace Defra.PTS.Common.Repositories.Implementation
 
         public async Task<bool> DoesUserExists(Guid contactId)
         {
-            var reu = userContext.User.FirstOrDefault();
+            var reu = userContext!.User.FirstOrDefaultAsync();
            return await userContext.User.AnyAsync(a => a.ContactId == contactId);
         }
 
@@ -39,13 +39,13 @@ namespace Defra.PTS.Common.Repositories.Implementation
         
         public async Task<(Guid?, Guid?, string)> GetUserDetails(Guid contactId)
         {
-            var user = await userContext.User.FirstOrDefaultAsync(a => a.ContactId == contactId);
-            return user != null ? (user.Id, user.AddressId, user.Email) : (Guid.Empty, Guid.Empty, string.Empty);
+            var user = await userContext!.User.FirstOrDefaultAsync(a => a.ContactId == contactId);
+            return user != null ? (user.Id!, user.AddressId!, user.Email!) : (Guid.Empty, Guid.Empty, string.Empty);
         }
 
-        public async Task<entity.User> GetUser(string userEmailAddress)
+        public async Task<Entity.User?> GetUser(string userEmailAddress)
         {
-            return await userContext.User.SingleOrDefaultAsync(a => a.Email == userEmailAddress);
+            return await userContext!.User.SingleOrDefaultAsync(a => a.Email == userEmailAddress);
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿using entity = Defra.PTS.Common.Entities;
+﻿using Entity = Defra.PTS.Common.Entities;
 using Defra.PTS.Common.Repositories.Interface;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -12,10 +12,10 @@ using System.Diagnostics.CodeAnalysis;
 namespace Defra.PTS.Common.Repositories.Implementation
 {
     [ExcludeFromCodeCoverage]
-    public class OwnerRepository : Repository<entity.Owner>, IOwnerRepository
+    public class OwnerRepository : Repository<Entity.Owner>, IOwnerRepository
     {
 
-        private CommonDbContext userContext
+        private CommonDbContext? userContext
         {
             get
             {

@@ -116,7 +116,7 @@ namespace Defra.PTS.Dynamics.Functions.Functions
                     if (isValidJson)
                     {
                         DynamicsResponseDto dynamicsEntryCreationResponse = JsonConvert.DeserializeObject<DynamicsResponseDto>(responseContent);
-                        log.LogError("Dynamics Response Error : {applicationId} - {Error_Code} - {Error_Message}"
+                        log.LogError("Dynamics Response Error : {0} - {1} - {2}"
                             ,applicationId, response.ReasonPhrase, dynamicsEntryCreationResponse.Error.Code, dynamicsEntryCreationResponse.Error.Message);
                         throw new QueueReaderException($"{applicationId} - {response.ReasonPhrase} - {dynamicsEntryCreationResponse.Error.Code} - {dynamicsEntryCreationResponse.Error.Message}");
                     }
@@ -128,8 +128,7 @@ namespace Defra.PTS.Dynamics.Functions.Functions
             }
             catch (Exception ex)
             {
-                log.LogError(ex, "Error Stack: ", ex.StackTrace);
-                log.LogError(ex, "Exception Message: ", ex.Message);
+                log.LogError(ex, "An error occurred.");
                 throw;
             }
         }
@@ -157,8 +156,7 @@ namespace Defra.PTS.Dynamics.Functions.Functions
             }
             catch (Exception ex)
             {
-                log.LogError("Error Stack: ", ex.StackTrace);
-                log.LogError("Exception Message: ", ex.Message);
+                log.LogError(ex, "An error occurred.");
                 throw;
             }
         }

@@ -1,5 +1,5 @@
 ﻿using Defra.PTS.Common.ApiServices.Interface;
-using models = Defra.PTS.Common.Models;
+using Models = Defra.PTS.Common.Models;
 using Defra.PTS.Common.Models.Enums;
 using Defra.PTS.Common.Repositories.Interface;
 using Microsoft.Extensions.Logging;
@@ -19,7 +19,6 @@ namespace Defra.PTS.Common.ApiServices.Implementation
 {
     public class ApplicationService : IApplicationService
     {
-        private ILogger<ApplicationService> _log;
         private readonly IApplicationRepository _applicationRepository;
         private readonly IOwnerRepository _ownerRepository;
         private readonly IAddressRepository _addressRepository;
@@ -30,8 +29,7 @@ namespace Defra.PTS.Common.ApiServices.Implementation
         private readonly IUserRepository _userRepository;
 
         public ApplicationService(
-            ILogger<ApplicationService> log
-            , IApplicationRepository applicationRepository
+              IApplicationRepository applicationRepository
             , IOwnerRepository ownerRepository
             , IAddressRepository addressRepository
             , IPetRepository petRepository
@@ -40,7 +38,6 @@ namespace Defra.PTS.Common.ApiServices.Implementation
             , ITravelDocumentRepository travelDocumentRepository
             , IUserRepository userRepository)
         {
-            _log = log;
             _applicationRepository = applicationRepository;
             _ownerRepository = ownerRepository;
             _addressRepository = addressRepository;
@@ -51,9 +48,9 @@ namespace Defra.PTS.Common.ApiServices.Implementation
             _userRepository = userRepository;
         }
 
-        public async Task<models.Application> GetApplication(Guid applicationId)
+        public async Task<Models.Application> GetApplication(Guid applicationId)
         {
-            var payloadObject = new models.Application();
+            var payloadObject = new Models.Application();
             var application = await _applicationRepository.Find(applicationId);
 
             if (application != null)
@@ -70,14 +67,12 @@ namespace Defra.PTS.Common.ApiServices.Implementation
                 payloadObject.NiptsDocumentReference = travelDocumentReference?.DocumentReferenceNumber;
                 payloadObject.NiptsSubmissionDate = application.DateOfApplication.ToString("s") + "Z";
 
-                if (owner != null)
-                {
-                    payloadObject.NiptsOwnerType = GetDynamicsOwnerType();
-                    payloadObject.NiptsOwnerName = application.OwnerNewName;
-                    payloadObject.NiptsOwnerEmail = owner.Email;
-                    payloadObject.NiptsOwnerphone = application.OwnerNewTelephone;
-                    payloadObject.NiptsCharityName = string.Empty;
-                }
+                payloadObject.NiptsOwnerType = GetDynamicsOwnerType();
+                payloadObject.NiptsOwnerName = application.OwnerNewName;
+                payloadObject.NiptsOwnerEmail = owner.Email;
+                payloadObject.NiptsOwnerphone = application.OwnerNewTelephone;
+                payloadObject.NiptsCharityName = string.Empty;
+
 
                 if (address != null)
                 {
@@ -89,38 +84,35 @@ namespace Defra.PTS.Common.ApiServices.Implementation
                     payloadObject.NiptsOwnerCountry = address!.CountryName!;
                 }
 
-                if (pet != null)
+                PetSpeciesType petSpecies = (PetSpeciesType)Enum.Parse(typeof(PetSpeciesType), pet.SpeciesId.ToString());
+                PetGenderType petGender = (PetGenderType)Enum.Parse(typeof(PetGenderType), pet.SexId.ToString());     
+                
+                payloadObject.NiptsPetname = pet.Name;
+                payloadObject.NiptsPetSpecies = petSpecies.GetDescription();
+                payloadObject.NiptsPetSex = petGender.GetDescription(); 
+                payloadObject.NiptsPetDob = pet.DOB?.ToString("yyyy-MM-dd");                  
+                payloadObject.NiptsPetUniqueFeatures = pet.UniqueFeatureDescription;
+                payloadObject.NiptsMicrochipnum = pet.MicrochipNumber;
+                payloadObject.NiptsMicrochippedDate = pet.MicrochippedDate?.ToString("yyyy-MM-dd");
+
+                var breed = await _breedRepository.Find(pet.BreedId!);
+                if (breed != null)
                 {
-                    PetSpeciesType petSpecies = (PetSpeciesType)Enum.Parse(typeof(PetSpeciesType), pet.SpeciesId.ToString());
-                    PetGenderType petGender = (PetGenderType)Enum.Parse(typeof(PetGenderType), pet.SexId.ToString());     
-                    
-                    payloadObject.NiptsPetname = pet.Name;
-                    payloadObject.NiptsPetSpecies = petSpecies.GetDescription();
-                    payloadObject.NiptsPetSex = petGender.GetDescription(); 
-                    payloadObject.NiptsPetDob = pet.DOB?.ToString("yyyy-MM-dd");                  
-                    payloadObject.NiptsPetUniqueFeatures = pet.UniqueFeatureDescription;
-                    payloadObject.NiptsMicrochipnum = pet.MicrochipNumber;
-                    payloadObject.NiptsMicrochippedDate = pet.MicrochippedDate?.ToString("yyyy-MM-dd");
-
-                    var breed = await _breedRepository.Find(pet.BreedId);
-                    if (breed != null)
+                    payloadObject.NiptsPetBreed = breed.Name;
+                    if (!string.IsNullOrEmpty(pet.AdditionalInfoMixedBreedOrUnknown))
                     {
-                        payloadObject.NiptsPetBreed = breed.Name;
-                        if (!string.IsNullOrEmpty(pet.AdditionalInfoMixedBreedOrUnknown))
-                        {
-                            payloadObject.NiptsPetBreed = pet.AdditionalInfoMixedBreedOrUnknown;
-                        }
+                        payloadObject.NiptsPetBreed = pet.AdditionalInfoMixedBreedOrUnknown;
                     }
+                }
 
-                    var colour = await _colourRepository.Find(pet.ColourId);
-                    if (colour != null)
+                var colour = await _colourRepository.Find(pet.ColourId);
+                if (colour != null)
+                {
+                    payloadObject.NiptsPetColour = colour.Name;
+                    if(!string.IsNullOrEmpty(pet.OtherColour))
                     {
-                        payloadObject.NiptsPetColour = colour.Name;
-                        if(!string.IsNullOrEmpty(pet.OtherColour))
-                        {
-                            payloadObject.NiptsPetOtherColour = pet.OtherColour;
-                        }                        
-                    }
+                        payloadObject.NiptsPetOtherColour = pet.OtherColour;
+                    }                        
                 }
             }
             return payloadObject;
@@ -133,7 +125,7 @@ namespace Defra.PTS.Common.ApiServices.Implementation
             var application = await  _applicationRepository.Find(applicationId);
             if (application != null)
             {
-                var status = (models.Enums.Status)Enum.Parse(typeof(models.Enums.Status), applicationUpdateQueueModel.StatusId);
+                var status = (Models.Enums.Status)Enum.Parse(typeof(Models.Enums.Status), applicationUpdateQueueModel.StatusId!);
                 application.DynamicId = applicationUpdateQueueModel.DynamicId;
                 application.Status = status.ToString();
                 application.DateAuthorised = applicationUpdateQueueModel.DateAuthorised;
@@ -163,7 +155,7 @@ namespace Defra.PTS.Common.ApiServices.Implementation
             string application = await new StreamReader(applicationStream).ReadToEndAsync();
             try
             {
-                models.ApplicationSubmittedMessageQueueModel? applicationSubmittedMessageQueueModel = JsonSerializer.Deserialize<models.ApplicationSubmittedMessageQueueModel>(application, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                Models.ApplicationSubmittedMessageQueueModel? applicationSubmittedMessageQueueModel = JsonSerializer.Deserialize<Models.ApplicationSubmittedMessageQueueModel>(application, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
                 return applicationSubmittedMessageQueueModel!;
             }
 

@@ -38,12 +38,12 @@ namespace Defra.PTS.Common.ApiServices.Implementation
                 return;
             }
 
-            _logger.LogInformation($"Sending application submitted message for ApplicationId : {message.ApplicationId}");
+            _logger.LogInformation("Sending application submitted message for ApplicationId : {0}", message.ApplicationId);
 
             var messages = new List<ApplicationSubmittedMessageQueueModel> { message };
             await SendBatchAsync(messages);
 
-            _logger.LogInformation($"Successfully sent application submitted message for ApplicationId : {message.ApplicationId}");
+            _logger.LogInformation("Successfully sent application submitted message for ApplicationId : {0}", message.ApplicationId);
         }
 
         [ExcludeFromCodeCoverage]
@@ -53,7 +53,7 @@ namespace Defra.PTS.Common.ApiServices.Implementation
 
             var batchIndex = 0;
 
-            ServiceBusMessageBatch messageBatch = null;
+            ServiceBusMessageBatch? messageBatch = null;
             try
             {
                 messageBatch = await sender.CreateMessageBatchAsync();
@@ -113,7 +113,7 @@ namespace Defra.PTS.Common.ApiServices.Implementation
         [ExcludeFromCodeCoverage]
         private async Task SendBatch(ServiceBusSender sender, int batchIndex, ServiceBusMessageBatch messageBatch)
         {
-            _logger.LogInformation($"Sending {messageBatch.Count} in a message batch for batchIndex {batchIndex}");
+            _logger.LogInformation("Sending {0} in a message batch for batchIndex {1}", messageBatch.Count, batchIndex);
 
             await sender.SendMessagesAsync(messageBatch);
         }

@@ -19,7 +19,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
-using model = Defra.PTS.Common.Models;
+using Model = Defra.PTS.Common.Models;
 
 namespace Defra.PTS.Dynamics.Functions.Functions;
 
@@ -51,7 +51,7 @@ public class FetchUpdateAddress
 
     [FunctionName("FetchAndUpdateAddress")]
     [OpenApiOperation(operationId: "FetchAndUpdateAddress", tags: new[] { "FetchAndUpdateAddress" })]
-    [OpenApiRequestBody(contentType: "application/json", bodyType: typeof(model.UserRequest), Description = "Sync User Details from Dynamics")]
+    [OpenApiRequestBody(contentType: "application/json", bodyType: typeof(Model.UserRequest), Description = "Sync User Details from Dynamics")]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(string), Description = "The OK response")]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.NotFound, contentType: "application/json", bodyType: typeof(string), Description = "The NotFound response")]
     public async Task<IActionResult> FetchAndUpdateAddress(
@@ -78,9 +78,8 @@ public class FetchUpdateAddress
         }
         catch (Exception ex)
         {
-            _logger.LogError("Error Stack: ", ex.StackTrace);
-            _logger.LogError("Exception Message: ", ex.Message);
-            throw;
+            _logger.LogError(ex, "An error occurred."); // Pass the exception object as the first parameter
+            throw; // Re-throw the exception to preserve the original stack trace
         }
 
     }

@@ -11,7 +11,7 @@ using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 using Newtonsoft.Json;
-using model = Defra.PTS.Common.Models;
+using Model = Defra.PTS.Common.Models;
 using Microsoft.Azure.ServiceBus;
 using static Defra.PTS.Common.Models.ConfigKeys;
 using Microsoft.Azure.Management.AppService.Fluent;
@@ -40,7 +40,7 @@ namespace Defra.PTS.Dynamics.Functions.Functions
 
         [FunctionName("WriteApplicationToQueue")]
         [OpenApiOperation(operationId: "WriteApplicationToQueue", tags: new[] { "QueueWriter" })]
-        [OpenApiRequestBody(contentType: "application/json", bodyType: typeof(model.ApplicationSubmittedMessageQueueModel), Description = "Add Application to Queue")]
+        [OpenApiRequestBody(contentType: "application/json", bodyType: typeof(Model.ApplicationSubmittedMessageQueueModel), Description = "Add Application to Queue")]
         [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(string), Description = "The OK response")]
         public async Task<IActionResult> WriteApplicationToQueue(
             [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "writetoqueue")] HttpRequest req
@@ -67,10 +67,9 @@ namespace Defra.PTS.Dynamics.Functions.Functions
             }
             catch (Exception ex)
             {
-                _logger.LogError("Error Stack: " + ex.StackTrace);
-                _logger.LogError("Exception Message: " + ex.Message);
+                _logger.LogError(ex, "An error occurred.");
                 throw;
-            }           
+            }
         }
     }
 }

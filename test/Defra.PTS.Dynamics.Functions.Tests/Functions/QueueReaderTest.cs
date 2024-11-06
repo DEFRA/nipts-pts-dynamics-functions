@@ -66,7 +66,7 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
 
             // Assert
             Assert.That(result, Is.Not.Null);
-            Assert.AreEqual(expectedResult, result.Message);
+            Assert.AreEqual(expectedResult, result?.Message);
         }
         
         [Test]
@@ -76,11 +76,11 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
             var expectedResult = "Invalid Object from message :" + myQueueItem;
 
             // Act
-            var result =  Assert.ThrowsAsync<QueueReaderException>(() => _systemUnderTest.ReadApplicationFromQueue(myQueueItem, _loggerMock.Object));
+            var result =  Assert.ThrowsAsync<QueueReaderException>(() => _systemUnderTest!.ReadApplicationFromQueue(myQueueItem, _loggerMock.Object));
 
             // Assert
             Assert.That(result, Is.Not.Null);
-            Assert.AreEqual(expectedResult, result.Message);
+            Assert.AreEqual(expectedResult, result?.Message);
         }
 
         [Test]
@@ -94,9 +94,9 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
                 .Setup(ds => ds.GetTokenForClient(It.IsAny<string[]>()))
                 .ReturnsAsync("fakeAccessToken"); // Set up a fake access token
 
-            Application application = null;
-            _applicationServiceMock
-                .Setup(a => a.GetApplication(It.IsAny<Guid>()))
+            Application? application = null;
+            _applicationServiceMock!
+                .Setup(a => a.GetApplication(It.IsAny<Guid>()))!
                 .ReturnsAsync(application); // Set up a fake application object
 
             _dynamicOptionsMock.Setup(a => a.Value).Returns(new DynamicOptions() { ApiVersion = "1.0", Authority = "authority", Scopes = "scope" });
@@ -138,7 +138,7 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
 
             // Assert
             Assert.That(result, Is.Not.Null);
-            Assert.AreEqual(expectedResult, result.Message);
+            Assert.AreEqual(expectedResult, result?.Message);
 
 
             handlerMock.Protected().Verify(
@@ -161,9 +161,9 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
                 .Setup(ds => ds.GetTokenForClient(It.IsAny<string[]>()))
                 .ReturnsAsync("fakeAccessToken"); // Set up a fake access token
 
-            Application application = null;
+            Application? application = null;
             _applicationServiceMock
-                .Setup(a => a.GetApplication(It.IsAny<Guid>()))
+                .Setup(a => a.GetApplication(It.IsAny<Guid>()))!
                 .ReturnsAsync(application); // Set up a fake application object
 
             _dynamicOptionsMock.Setup(a => a.Value).Returns(new DynamicOptions() { ApiVersion = "1.0", Authority = "authority", Scopes = "scope" });
@@ -206,7 +206,7 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
 
             // Assert
             Assert.That(result, Is.Not.Null);
-            Assert.AreEqual(expectedResult, result.Message);
+            Assert.AreEqual(expectedResult, result?.Message);
 
 
             handlerMock.Protected().Verify(
@@ -489,11 +489,11 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
             var expectedResult = "Invalid Object from message :" + myQueueItem;
 
             // Act
-            var result = Assert.ThrowsAsync<QueueReaderException>(() => _systemUnderTest.UpdateApplicationFromQueue(myQueueItem, _loggerMock.Object));
+            var result = Assert.ThrowsAsync<QueueReaderException>(() => _systemUnderTest!.UpdateApplicationFromQueue(myQueueItem, _loggerMock.Object));
 
             // Assert
             Assert.That(result, Is.Not.Null);
-            Assert.AreEqual(expectedResult, result.Message);
+            Assert.AreEqual(expectedResult, result?.Message);
         }
 
 

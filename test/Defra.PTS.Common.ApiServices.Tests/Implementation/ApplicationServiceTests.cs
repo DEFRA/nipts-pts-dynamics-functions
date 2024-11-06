@@ -3,8 +3,8 @@ using Defra.PTS.Common.Repositories.Interface;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework;
-using models = Defra.PTS.Common.Models;
-using entities = Defra.PTS.Common.Entities;
+using Models = Defra.PTS.Common.Models;
+using Entities = Defra.PTS.Common.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,7 +21,6 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
     [TestFixture]
     public class ApplicationServiceTests
     {
-        private Mock<ILogger<ApplicationService>>? _loggerMock;
         private Mock<IApplicationRepository>? _applicationRepositoryMock;
         private Mock<IOwnerRepository>? _ownerRepositoryMock;
         private Mock<IAddressRepository>? _addressRepositoryMock;
@@ -36,7 +35,6 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
         [SetUp]
         public void SetUp()
         {
-            _loggerMock = new Mock<ILogger<ApplicationService>>();
             _applicationRepositoryMock = new Mock<IApplicationRepository>();
             _ownerRepositoryMock = new Mock<IOwnerRepository>();
             _addressRepositoryMock = new Mock<IAddressRepository>();
@@ -47,8 +45,7 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
             _userRepositoryMock = new Mock<IUserRepository>();
 
             sut = new ApplicationService(
-                  _loggerMock.Object
-                , _applicationRepositoryMock.Object
+                  _applicationRepositoryMock.Object
                 , _ownerRepositoryMock.Object
                 , _addressRepositoryMock.Object
                 , _petRepositoryMock.Object
@@ -62,12 +59,12 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
         public void GetApplication_WhenApplicationisNull_ReturnsBlankApplicationObject()
         {
             Guid guid = Guid.Empty;
-            entities.Application application = null;
+            Entities.Application? application = null;
 
             _applicationRepositoryMock?.Setup(a => a.Find(It.IsAny<Guid>()))!.ReturnsAsync(application);
 
             var result = sut?.GetApplication(guid);
-            Assert.AreEqual(typeof(models.Application), result?.Result.GetType());
+            Assert.AreEqual(typeof(Models.Application), result?.Result.GetType());
         }
 
         [Test]
@@ -84,7 +81,7 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
             var contactId = Guid.NewGuid();
 
             _applicationRepositoryMock?.Setup(repo => repo.Find(applicationId))
-                .ReturnsAsync(new entities.Application
+                .ReturnsAsync(new Entities.Application
                 {
                     Id = applicationId,
                     OwnerId = ownerId,
@@ -99,7 +96,7 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
                 });
 
             _ownerRepositoryMock?.Setup(repo => repo.Find(ownerId))
-                .ReturnsAsync(new entities.Owner
+                .ReturnsAsync(new Entities.Owner
                 {
                     Id = ownerId,
                     AddressId = addressId,
@@ -110,7 +107,7 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
                 });
 
             _addressRepositoryMock?.Setup(repo => repo.GetAddress(addressId, AddressType.Owner))
-                .ReturnsAsync(new entities.Address
+                .ReturnsAsync(new Entities.Address
                 {
                     AddressLineOne = "123 Main St",
                     AddressLineTwo = "Apt 456",
@@ -122,7 +119,7 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
                 });
 
             _petRepositoryMock?.Setup(repo => repo.Find(petId))
-                .ReturnsAsync(new entities.Pet
+                .ReturnsAsync(new Entities.Pet
                 {
                     Id = petId,
                     Name = "Fluffy",
@@ -139,16 +136,16 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
                     // Add other properties as needed
                 });
 
-            _breedRepositoryMock?.Setup(repo => repo.Find(It.IsAny<int?>()))
-                .ReturnsAsync(new entities.Breed
+            _breedRepositoryMock?.Setup(repo => repo.Find(It.IsAny<int?>()!))
+                .ReturnsAsync(new Entities.Breed
                 {
                     Id = 1,
                     Name = "Labrador Retriever" // Replace with actual breed name
                                                 // Add other properties as needed
                 });
 
-            _colourRepositoryMock?.Setup(repo => repo.Find(It.IsAny<int?>()))
-                .ReturnsAsync(new entities.Colour
+            _colourRepositoryMock?.Setup(repo => repo.Find(It.IsAny<int?>()!))
+                .ReturnsAsync(new Entities.Colour
                 {
                     Id = 1,
                     Name = "Brown" // Replace with actual color name
@@ -156,14 +153,14 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
                 });
 
             _travelDocumentRepositoryMock?.Setup(repo => repo.GetTravelDocument(applicationId, ownerId, petId))
-                .ReturnsAsync(new entities.TravelDocument
+                .ReturnsAsync(new Entities.TravelDocument
                 {
                     DocumentReferenceNumber = "Doc123"
                     // Add other properties as needed
                 });
 
             _userRepositoryMock?.Setup(repo => repo.Find(It.IsAny<Guid>()))
-                .ReturnsAsync(new entities.User
+                .ReturnsAsync(new Entities.User
                 {
                     Id = userId,
                     ContactId = contactId,
@@ -185,8 +182,8 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
             _ownerRepositoryMock?.Verify(repo => repo.Find(ownerId), Times.Once);
             _addressRepositoryMock?.Verify(repo => repo.GetAddress(addressId, AddressType.Owner), Times.Once);
             _petRepositoryMock?.Verify(repo => repo.Find(petId), Times.Once);
-            _breedRepositoryMock?.Verify(repo => repo.Find(It.IsAny<int?>()), Times.Once);
-            _colourRepositoryMock?.Verify(repo => repo.Find(It.IsAny<int?>()), Times.Once);
+            _breedRepositoryMock?.Verify(repo => repo.Find(It.IsAny<int?>()!), Times.Once);
+            _colourRepositoryMock?.Verify(repo => repo.Find(It.IsAny<int?>()!), Times.Once);
             _travelDocumentRepositoryMock?.Verify(repo => repo.GetTravelDocument(applicationId, ownerId, petId), Times.Once);
         }
 
@@ -195,7 +192,7 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
         {
             var dynamicId = Guid.NewGuid();
             // Arrange
-            var applicationUpdateQueueModel = new models.ApplicationUpdateQueueModel
+            var applicationUpdateQueueModel = new Models.ApplicationUpdateQueueModel
             {
                 Id = Guid.NewGuid(),
                 StatusId = "Authorised", // Replace with actual status ID
@@ -206,8 +203,8 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
                 // Add other properties as needed
             };
 
-            entities.Application application = null;
-            _applicationRepositoryMock?.Setup(repo => repo.Find(applicationUpdateQueueModel.Id))
+            Entities.Application? application = null;
+            _applicationRepositoryMock?.Setup(repo => repo.Find(applicationUpdateQueueModel.Id))!
                 .ReturnsAsync(application);
 
             // Act
@@ -218,7 +215,7 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
 
             // Verify that the Update and SaveChanges methods were called on the mock repository
             _applicationRepositoryMock?.Verify(repo => repo.Find(applicationUpdateQueueModel.Id), Times.Once);
-            _applicationRepositoryMock?.Verify(repo => repo.Update(It.IsAny<entities.Application>()), Times.Never);
+            _applicationRepositoryMock?.Verify(repo => repo.Update(It.IsAny<Entities.Application>()), Times.Never);
             _applicationRepositoryMock?.Verify(repo => repo.SaveChanges(), Times.Never);
         }
 
@@ -227,7 +224,7 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
         {
             var dynamicId = Guid.NewGuid();
             // Arrange
-            var applicationUpdateQueueModel = new models.ApplicationUpdateQueueModel
+            var applicationUpdateQueueModel = new Models.ApplicationUpdateQueueModel
             {
                 Id = Guid.NewGuid(),
                 StatusId = "Authorised", // Replace with actual status ID
@@ -239,7 +236,7 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
             };
 
             _applicationRepositoryMock?.Setup(repo => repo.Find(applicationUpdateQueueModel.Id))
-                .ReturnsAsync(new entities.Application
+                .ReturnsAsync(new Entities.Application
                 {
                     Id = applicationUpdateQueueModel.Id,
                     // Set other properties as needed
@@ -254,7 +251,7 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
 
             // Verify that the Update and SaveChanges methods were called on the mock repository
             _applicationRepositoryMock?.Verify(repo => repo.Find(applicationUpdateQueueModel.Id), Times.Once);
-            _applicationRepositoryMock?.Verify(repo => repo.Update(It.IsAny<entities.Application>()), Times.Once);
+            _applicationRepositoryMock?.Verify(repo => repo.Update(It.IsAny<Entities.Application>()), Times.Once);
             _applicationRepositoryMock?.Verify(repo => repo.SaveChanges(), Times.Once);
         }
 
@@ -297,7 +294,7 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
         public async Task GetApplicationQueueModel_ValidStream_ReturnsModel()
         {
             // Arrange
-            var applicationData = new models.ApplicationSubmittedMessageQueueModel
+            var applicationData = new Models.ApplicationSubmittedMessageQueueModel
             {
 
             };

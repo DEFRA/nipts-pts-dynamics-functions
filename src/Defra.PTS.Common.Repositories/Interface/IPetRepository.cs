@@ -1,4 +1,4 @@
-﻿using entity = Defra.PTS.Common.Entities;
+﻿using Entity = Defra.PTS.Common.Entities;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using System;
 using System.Collections.Generic;
@@ -9,7 +9,7 @@ using Defra.PTS.Common.Models.Enums;
 
 namespace Defra.PTS.Common.Repositories.Interface
 {
-    public interface IPetRepository : IRepository<entity.Pet>
+    public interface IPetRepository : IRepository<Entity.Pet>
     {
     }
 }

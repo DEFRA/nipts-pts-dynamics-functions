@@ -1,7 +1,7 @@
 ﻿using Defra.PTS.Common.ApiServices.Interface;
 using Defra.PTS.Common.Repositories.Interface;
-using entity = Defra.PTS.Common.Entities;
-using model = Defra.PTS.Common.Models;
+using Entity = Defra.PTS.Common.Entities;
+using Model = Defra.PTS.Common.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,22 +16,19 @@ namespace Defra.PTS.Common.ApiServices.Implementation
 {
     public class UserService : IUserService
     {
-        private ILogger<UserService> _log;
         private readonly IUserRepository _userRepository;
-        private readonly IRepository<entity.Address> _addressRepository;
+        private readonly IRepository<Entity.Address> _addressRepository;
         public UserService(
-            ILogger<UserService> log,
             IUserRepository userRepository,
-            IRepository<entity.Address> addressRepository)
+            IRepository<Entity.Address> addressRepository)
         {
-            _log = log;
             _userRepository = userRepository;
             _addressRepository = addressRepository;
         }
 
-        public async Task<Guid> CreateUser(model.User userModel)
+        public async Task<Guid> CreateUser(Model.User userModel)
         {
-            var addressDB = new entity.Address()
+            var addressDB = new Entity.Address()
             {
                 AddressLineOne = userModel?.Address?.AddressLineOne,
                 AddressLineTwo = userModel?.Address?.AddressLineTwo,
@@ -47,7 +44,7 @@ namespace Defra.PTS.Common.ApiServices.Implementation
             await _addressRepository.Add(addressDB);
             await _addressRepository.SaveChanges();
 
-            var userDB = new entity.User()
+            var userDB = new Entity.User()
             {
                 Email = userModel!.Email,
                 FullName = userModel.FullName,
@@ -85,13 +82,13 @@ namespace Defra.PTS.Common.ApiServices.Implementation
             return await _userRepository.DoesAddresssExists(addressId);
         }
 
-        public async Task<model.User> GetUserModel(Stream userStream)
+        public async Task<Model.User> GetUserModel(Stream userStream)
         {
             string user = await new StreamReader(userStream).ReadToEndAsync();
          
             try
             {
-                model.User? userModel = JsonSerializer.Deserialize<model.User>(user, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                Model.User? userModel = JsonSerializer.Deserialize<Model.User>(user, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
                 return userModel!;
             }
 
@@ -101,13 +98,13 @@ namespace Defra.PTS.Common.ApiServices.Implementation
             }
         }
 
-        public async Task<model.UserRequest> GetUserRequestModel(Stream userStream)
+        public async Task<Model.UserRequest> GetUserRequestModel(Stream userStream)
         {
             string userRequest = await new StreamReader(userStream).ReadToEndAsync();
 
             try
             {
-                model.UserRequest? userRequestModel = JsonSerializer.Deserialize<model.UserRequest>(userRequest, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                Model.UserRequest? userRequestModel = JsonSerializer.Deserialize<Model.UserRequest>(userRequest, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
                 return userRequestModel!;
             }
 
@@ -122,12 +119,12 @@ namespace Defra.PTS.Common.ApiServices.Implementation
             return _userRepository.GetUserDetails(contactId).Result;
         }
 
-        public async Task<Guid> AddAddress(model.UserRequest userRequestModel)
+        public async Task<Guid> AddAddress(Model.UserRequest userRequestModel)
         {
-            entity.Address? addressDB = null;
+            Entity.Address? addressDB = null;
             if (userRequestModel.Address != null)
             {
-                addressDB = new entity.Address()
+                addressDB = new Entity.Address()
                 {
                     AddressLineOne = userRequestModel.Address.AddressLineOne,
                     AddressLineTwo = userRequestModel.Address.AddressLineTwo,
@@ -146,9 +143,9 @@ namespace Defra.PTS.Common.ApiServices.Implementation
             return addressDB != null ? addressDB.Id : Guid.Empty;
         }
 
-        public async Task<Guid> UpdateAddress(model.UserRequest userRequestModel, Guid addressId)
+        public async Task<Guid> UpdateAddress(Model.UserRequest userRequestModel, Guid addressId)
         {
-            entity.Address? addressDB = await _addressRepository.Find(addressId);
+            Entity.Address? addressDB = await _addressRepository.Find(addressId);
             if (addressDB == null)
             {
                 return await AddAddress(userRequestModel);
@@ -176,7 +173,7 @@ namespace Defra.PTS.Common.ApiServices.Implementation
         {
 
             var userDB = _userRepository.GetUser(userEmail).Result;
-            userDB.AddressId = addressId;
+            userDB!.AddressId = addressId;
             userDB.Telephone = telephone;
             userDB.FirstName = firstName;
             userDB.LastName = lastName;

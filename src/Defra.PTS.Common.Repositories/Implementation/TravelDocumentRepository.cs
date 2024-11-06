@@ -1,4 +1,4 @@
-﻿using entity = Defra.PTS.Common.Entities;
+﻿using Entity = Defra.PTS.Common.Entities;
 using Defra.PTS.Common.Repositories.Interface;
 using System;
 using System.Collections.Generic;
@@ -12,9 +12,9 @@ using System.Diagnostics.CodeAnalysis;
 namespace Defra.PTS.Common.Repositories.Implementation
 {
     [ExcludeFromCodeCoverage]
-    public class TravelDocumentRepository : Repository<entity.TravelDocument>, ITravelDocumentRepository
+    public class TravelDocumentRepository : Repository<Entity.TravelDocument>, ITravelDocumentRepository
     {
-        private CommonDbContext travelDocumentContext
+        private CommonDbContext? travelDocumentContext
         {
             get
             {
@@ -26,9 +26,9 @@ namespace Defra.PTS.Common.Repositories.Implementation
         {
         }
 
-        public async Task<entity.TravelDocument> GetTravelDocument(Guid? applicationId, Guid? ownerId, Guid? petId)
+        public async Task<Entity.TravelDocument> GetTravelDocument(Guid? applicationId, Guid? ownerId, Guid? petId)
         {
-                return await travelDocumentContext.TravelDocument.FirstOrDefaultAsync(a => a.ApplicationId == applicationId && a.OwnerId == ownerId && a.PetId == petId);           
+            return await travelDocumentContext.TravelDocument.FirstOrDefaultAsync(a => a.ApplicationId == applicationId && a.OwnerId == ownerId && a.PetId == petId);           
         }
     }
 }

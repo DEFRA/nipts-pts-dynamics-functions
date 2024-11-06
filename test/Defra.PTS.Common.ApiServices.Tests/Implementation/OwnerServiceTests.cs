@@ -5,8 +5,8 @@ using Defra.PTS.Common.Repositories.Interface;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework;
-using entity = Defra.PTS.Common.Entities;
-using model = Defra.PTS.Common.Models;
+using Entity = Defra.PTS.Common.Entities;
+using Model = Defra.PTS.Common.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,24 +19,22 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
     [TestFixture]
     public class OwnerServiceTests
     {
-        private Mock<ILogger<OwnerService>> _loggerMock;
-        private Mock<IOwnerRepository> _OwnerRepository;
-        private Mock<IRepository<entity.Address>> _repoAddressService;
-        OwnerService sut;
+        private Mock<IOwnerRepository>? _OwnerRepository;
+        private Mock<IRepository<Entity.Address>>? _repoAddressService;
+        OwnerService? sut;
 
         [SetUp]
         public void SetUp()
         {
-            _loggerMock = new Mock<ILogger<OwnerService>>();
             _OwnerRepository = new Mock<IOwnerRepository>();
-            _repoAddressService = new Mock<IRepository<entity.Address>>();
+            _repoAddressService = new Mock<IRepository<Entity.Address>>();
         }
 
         [Test]
         public async Task CreateOwner_WhenValidData_ReturnsGuid()
         {
             Guid addressGuid = Guid.Empty;
-            var modelAddress = new model.Address()
+            var modelAddress = new Model.Address()
             {
                 AddressLineOne = "19 First Avenue",
                 AddressLineTwo = "",
@@ -50,7 +48,7 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
                 CreatedOn = DateTime.Now
             };
 
-            var modelOwner = new model.Owner
+            var modelOwner = new Model.Owner
             {
                 FullName = "Cuan Brown",
                 Email = "cuan@test.com",
@@ -63,7 +61,7 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
                 Address = modelAddress,
             };
 
-            var address = new entity.Address()
+            var address = new Entity.Address()
             {
                 AddressLineOne = "19 First Avenue",
                 AddressLineTwo = "",
@@ -76,12 +74,12 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
                 CreatedBy = Guid.Parse("AB4ECAEA-877C-4560-EDE4-08DBD163F0B6"),
                 CreatedOn = DateTime.Now
             };
-            _repoAddressService.Setup(a => a.Add(address)).Returns(Task.FromResult(address.Id = addressGuid));
+            _repoAddressService!.Setup(a => a.Add(address)).Returns(Task.FromResult(address.Id = addressGuid));
             await _repoAddressService.Object.Add(address);
             _repoAddressService.Setup(a => a.SaveChanges()).ReturnsAsync(1);
 
             Guid OwnerGuid = Guid.Empty;
-            var Owner = new entity.Owner
+            var Owner = new Entity.Owner
             {
                 Id = OwnerGuid,
                 Email = "cuan@test.com",
@@ -94,13 +92,13 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
 
             };
 
-            _OwnerRepository.Setup(a => a.Add(Owner)).Returns(Task.FromResult(Owner.Id = OwnerGuid));
+            _OwnerRepository!.Setup(a => a.Add(Owner)).Returns(Task.FromResult(Owner.Id = OwnerGuid));
 
             await _OwnerRepository.Object.Add(Owner);
             _OwnerRepository.Setup(a => a.SaveChanges()).ReturnsAsync(1);
 
 
-            sut = new OwnerService(_loggerMock.Object, _OwnerRepository.Object, _repoAddressService.Object);
+            sut = new OwnerService(_OwnerRepository.Object, _repoAddressService.Object);
 
             var result = sut.CreateOwner(modelOwner);
             Assert.AreEqual(OwnerGuid, result.Result);
@@ -110,36 +108,9 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
         [Test]
         public void DoesOwnerExists_WhenInValidData_ReturnsError()
         {
-            var modelAddress = new model.Address()
-            {
-                AddressLineOne = "19 First Avenue",
-                AddressLineTwo = "",
-                TownOrCity = "Grays",
-                County = "Essex",
-                CountryName = "UK",
-                PostCode = "RM13 4FT",
-
-                IsActive = true,
-                CreatedBy = Guid.Parse("AB4ECAEA-877C-4560-EDE4-08DBD163F0B6"),
-                CreatedOn = DateTime.Now
-            };
-
-            var modelOwner = new model.Owner
-            {
-                FullName = "Cuan Brown",
-                Email = "cuan@test.com",
-                OwnerTypeId = 1,
-                Telephone = "9999999999",
-                CreatedBy = Guid.Parse("FB4ECAEA-877C-4560-EDE4-08DBD163F0B6"),
-                CreatedOn = DateTime.Now,
-                UpdatedBy = Guid.Parse("FB4ECAEA-877C-4560-EDE4-08DBD163F0B6"),
-                UpdatedOn = DateTime.Now,
-                Address = modelAddress,
-            };
-
-            sut = new OwnerService(_loggerMock.Object, _OwnerRepository.Object, _repoAddressService.Object);
+            sut = new OwnerService(_OwnerRepository!.Object, _repoAddressService!.Object);
             var expectedResult = $"Invalid Owner Email Address";
-            var result = Assert.ThrowsAsync<UserFunctionException>(() => sut.DoesOwnerExists(null));
+            var result = Assert.ThrowsAsync<UserFunctionException>(() => sut.DoesOwnerExists(null!));
 
             Assert.IsNotNull(result);
             Assert.AreEqual(expectedResult, result?.Message);
@@ -148,37 +119,10 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
         [Test]
         public void DoesOwnerExists_WheValidData_ReturnsError()
         {
-            var modelAddress = new model.Address()
-            {
-                AddressLineOne = "19 First Avenue",
-                AddressLineTwo = "",
-                TownOrCity = "Grays",
-                County = "Essex",
-                CountryName = "UK",
-                PostCode = "RM13 4FT",
-
-                IsActive = true,
-                CreatedBy = Guid.Parse("AB4ECAEA-877C-4560-EDE4-08DBD163F0B6"),
-                CreatedOn = DateTime.Now
-            };
-
-            var modelOwner = new model.Owner
-            {
-                FullName = "Cuan Brown",
-                Email = "cuan@test.com",
-                OwnerTypeId = 1,
-                Telephone = "9999999999",
-                CreatedBy = Guid.Parse("FB4ECAEA-877C-4560-EDE4-08DBD163F0B6"),
-                CreatedOn = DateTime.Now,
-                UpdatedBy = Guid.Parse("FB4ECAEA-877C-4560-EDE4-08DBD163F0B6"),
-                UpdatedOn = DateTime.Now,
-                Address = modelAddress,
-            };
-
-            _OwnerRepository.Setup(a => a.DoesOwnerExists(It.IsAny<string>())).Returns(Task.FromResult(true));
+            _OwnerRepository!.Setup(a => a.DoesOwnerExists(It.IsAny<string>())).Returns(Task.FromResult(true));
 
 
-            sut = new OwnerService(_loggerMock.Object, _OwnerRepository.Object, _repoAddressService.Object);
+            sut = new OwnerService(_OwnerRepository.Object, _repoAddressService!.Object);
             var result = sut.DoesOwnerExists("cuan@test.com");
             Assert.IsTrue(result.Result);
         }
@@ -187,23 +131,9 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
         [Test]
         public void GetOwnerModel_WhenValidData_ReturnsModel()
         {
-            var modelAddress = new model.Address()
-            {
-                AddressLineOne = "19 First Avenue",
-                AddressLineTwo = "",
-                TownOrCity = "Grays",
-                County = "Essex",
-                CountryName = "UK",
-                PostCode = "RM13 4FT",
-
-                IsActive = true,
-                CreatedBy = Guid.Parse("AB4ECAEA-877C-4560-EDE4-08DBD163F0B6"),
-                CreatedOn = DateTime.Now
-            };
-
             Guid OwnerGuid = Guid.Empty;
 
-            sut = new OwnerService(_loggerMock.Object, _OwnerRepository.Object, _repoAddressService.Object);
+            sut = new OwnerService(_OwnerRepository!.Object, _repoAddressService!.Object);
 
             var json = "{" +
                     "\"FullName\":null," +
@@ -217,7 +147,7 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
                 "}";
 
             var memoryStream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(json));
-            sut = new OwnerService(_loggerMock.Object, _OwnerRepository.Object, _repoAddressService.Object);
+            sut = new OwnerService(_OwnerRepository.Object, _repoAddressService.Object);
             var result = sut.GetOwnerModel(memoryStream);
             Assert.IsNotNull(result);
             Assert.AreEqual("cuan@test.com", result.Result.Email);
@@ -232,8 +162,8 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
                 "}";
 
             var memoryStream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(json));
-            sut = new OwnerService(_loggerMock.Object, _OwnerRepository.Object, _repoAddressService.Object);
-            var result = Assert.ThrowsAsync<UserFunctionException>(() => sut.GetOwnerModel(memoryStream));
+            sut = new OwnerService(_OwnerRepository!.Object, _repoAddressService.Object);
+            Assert.ThrowsAsync<UserFunctionException>(() => sut.GetOwnerModel(memoryStream));
         }
     }
 }

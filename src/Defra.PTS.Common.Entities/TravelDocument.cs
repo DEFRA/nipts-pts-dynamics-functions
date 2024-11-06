@@ -16,7 +16,7 @@ namespace Defra.PTS.Common.Entities
         public Guid OwnerId { get; set; }
         public Guid ApplicationId { get; set; }
         public string? QRCode { get; set; }
-        public string DocumentReferenceNumber { get; set; }
+        public string? DocumentReferenceNumber { get; set; }
         public bool? IsLifeTIme { get; set; }
         public DateTime? ValidityStartDate { get; set; }
         public DateTime? ValidityEndDate { get; set; }

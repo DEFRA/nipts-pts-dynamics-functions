@@ -27,8 +27,6 @@ namespace Defra.PTS.Common.ApiServices.Configuration
             services.AddScoped<IApplicationRepository, ApplicationRepository>();
             services.AddScoped<IAddressRepository, AddressRepository>();
             services.AddScoped<IPetRepository, PetRepository>();
-            services.AddScoped<IBreedRepository, BreedRepository>();
-            services.AddScoped<IColourRepository, ColourRepository>();
             services.AddScoped<ITravelDocumentRepository, TravelDocumentRepository>();
             services.AddTransient(typeof(IRepository<>), typeof(Repository<>));
 
