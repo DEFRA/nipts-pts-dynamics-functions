@@ -18,6 +18,13 @@ namespace Defra.PTS.Common.ApiServices.Implementation
     {
         private readonly IUserRepository _userRepository;
         private readonly IRepository<Entity.Address> _addressRepository;
+
+        // Cached JsonSerializerOptions instance for reuse
+        private static readonly JsonSerializerOptions _jsonOptions = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        };
+
         public UserService(
             IUserRepository userRepository,
             IRepository<Entity.Address> addressRepository)
@@ -85,13 +92,12 @@ namespace Defra.PTS.Common.ApiServices.Implementation
         public async Task<Model.User> GetUserModel(Stream userStream)
         {
             string user = await new StreamReader(userStream).ReadToEndAsync();
-         
+
             try
             {
-                Model.User? userModel = JsonSerializer.Deserialize<Model.User>(user, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                Model.User? userModel = JsonSerializer.Deserialize<Model.User>(user, _jsonOptions);
                 return userModel!;
             }
-
             catch
             {
                 throw new UserFunctionException("Cannot create User as User Model Cannot be Deserialized");
@@ -104,10 +110,9 @@ namespace Defra.PTS.Common.ApiServices.Implementation
 
             try
             {
-                Model.UserRequest? userRequestModel = JsonSerializer.Deserialize<Model.UserRequest>(userRequest, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                Model.UserRequest? userRequestModel = JsonSerializer.Deserialize<Model.UserRequest>(userRequest, _jsonOptions);
                 return userRequestModel!;
             }
-
             catch
             {
                 throw new UserFunctionException("Cannot create UserRequest as UserRequest Model Cannot be Deserialized");
@@ -178,13 +183,12 @@ namespace Defra.PTS.Common.ApiServices.Implementation
             userDB.FirstName = firstName;
             userDB.LastName = lastName;
             userDB.FullName = firstName + " " + lastName;
-            userDB.UpdatedOn = DateTime.Now;            
+            userDB.UpdatedOn = DateTime.Now;
 
             _userRepository.Update(userDB);
             await _userRepository.SaveChanges();
 
             return userDB.Id;
-
         }
     }
 }
