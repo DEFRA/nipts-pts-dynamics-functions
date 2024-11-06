@@ -45,7 +45,7 @@ namespace Defra.PTS.Common.Repositories.Implementation
 
         public async Task<Entity.User?> GetUser(string userEmailAddress)
         {
-            return await userContext!.User.SingleOrDefaultAsync(a => a.Email == userEmailAddress);
+            return await userContext!.User!.SingleOrDefaultAsync(a => a.Email == userEmailAddress);
         }
     }
 }

@@ -29,7 +29,7 @@ namespace Defra.PTS.Common.Repositories.Implementation
 
         public async Task<bool> DoesOwnerExists(string ownerEmailAddress)
         {
-           return await userContext.Owner.AnyAsync(a => a.Email == ownerEmailAddress);
+           return await userContext!.Owner.AnyAsync(a => a.Email == ownerEmailAddress);
         }
 
         public async Task<Owner?> GetOwner(Guid ownerId)
