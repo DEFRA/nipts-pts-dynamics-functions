@@ -22,7 +22,6 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
     public class QueueWriterTest
     {
         private Mock<HttpRequest>? _mockRequest;
-        private Mock<ILogger<QueueWriter>>? _loggerMock;
         private Mock<IApplicationService>? _applicationServiceMock;
         private Mock<IServiceBusService>? _serviceBusServiceMock;
         private QueueWriter? _systemUnderTest;
@@ -31,11 +30,10 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
         public void SetUp()
         {
             _mockRequest = new Mock<HttpRequest>();
-            _loggerMock = new Mock<ILogger<QueueWriter>>();
             _applicationServiceMock = new Mock<IApplicationService>();
             _serviceBusServiceMock = new Mock<IServiceBusService>();
 
-            _systemUnderTest = new QueueWriter(_loggerMock.Object, _applicationServiceMock.Object, _serviceBusServiceMock.Object);
+            _systemUnderTest = new QueueWriter(_applicationServiceMock.Object, _serviceBusServiceMock.Object);
         }
 
         [Test]

@@ -24,16 +24,13 @@ namespace Defra.PTS.Dynamics.Functions.Functions
 {
     public class QueueWriter
     {
-        private readonly ILogger<QueueWriter> _logger;
         private readonly IApplicationService _applicationService;
         private readonly IServiceBusService _azureServiceBusService;
 
         public QueueWriter(
-              ILogger<QueueWriter> log
-            , IApplicationService applicationService
+            IApplicationService applicationService
             , IServiceBusService azureServiceBusService)
         {
-            _logger = log;
             _applicationService = applicationService;
             _azureServiceBusService = azureServiceBusService;
         }
