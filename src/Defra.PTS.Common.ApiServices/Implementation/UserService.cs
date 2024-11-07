@@ -19,6 +19,11 @@ namespace Defra.PTS.Common.ApiServices.Implementation
         private readonly IUserRepository _userRepository;
         private readonly IRepository<Entity.Address> _addressRepository;
 
+        private static readonly JsonSerializerOptions _jsonOptions = new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        };
+
 
         public UserService(
             IUserRepository userRepository,
@@ -90,10 +95,7 @@ namespace Defra.PTS.Common.ApiServices.Implementation
 
             try
             {
-                Model.User? userModel = JsonSerializer.Deserialize<Model.User>(user, new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                });
+                Model.User? userModel = JsonSerializer.Deserialize<Model.User>(user, _jsonOptions);
 
                 return userModel!;
             }
@@ -109,10 +111,7 @@ namespace Defra.PTS.Common.ApiServices.Implementation
 
             try
             {
-                Model.UserRequest? userRequestModel = JsonSerializer.Deserialize<Model.UserRequest>(userRequest, new JsonSerializerOptions
-                {
-                    PropertyNameCaseInsensitive = true
-                });
+                Model.UserRequest? userRequestModel = JsonSerializer.Deserialize<Model.UserRequest>(userRequest, _jsonOptions);
 
                 return userRequestModel!;
             }
