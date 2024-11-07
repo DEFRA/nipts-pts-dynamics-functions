@@ -180,7 +180,7 @@ namespace Defra.PTS.Common.ApiServices.Implementation
         {
 
             var userDB = _userRepository.GetUser(userEmail).Result;
-            userDB.AddressId = addressId;
+            userDB!.AddressId = addressId;
             userDB.Telephone = telephone;
             userDB.FirstName = firstName;
             userDB.LastName = lastName;
