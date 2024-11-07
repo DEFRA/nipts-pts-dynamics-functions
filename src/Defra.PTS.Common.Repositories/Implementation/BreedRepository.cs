@@ -14,6 +14,14 @@ namespace Defra.PTS.Common.Repositories.Implementation
     public class BreedRepository : Repository<Entity.Breed>, IBreedRepository
     {
 
+        private CommonDbContext breedContext
+        {
+            get
+            {
+                return _dbContext as CommonDbContext;
+            }
+        }
+
         public BreedRepository(DbContext dbContext) : base(dbContext)
         {
 
