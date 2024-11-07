@@ -57,21 +57,30 @@ public class FetchUpdateAddress
     public async Task<IActionResult> FetchAndUpdateAddress(
         [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "fetchupdateaddress")] HttpRequest req)
     {
-        var inputData = req?.Body;
-        if (inputData == null)
+        try
         {
-            throw new UserFunctionException("Invalid user input, is NUll or Empty");
+            var inputData = req?.Body;
+            if (inputData == null)
+            {
+                throw new UserFunctionException("Invalid user input, is NUll or Empty");
+            }
+            var userRequestModel = await _userService.GetUserRequestModel(inputData);
+            var userExist = await _userService.DoesUserExists(userRequestModel.ContactId.GetValueOrDefault());
+            if (!userExist)
+            {
+                return new NotFoundObjectResult($"User does not exist for this contact: {userRequestModel.ContactId}");
+            }
+
+            var addressId = await SyncDynamicsContactDetailsToUser(userRequestModel);
+
+            return new OkObjectResult(addressId);
+
         }
-        var userRequestModel = await _userService.GetUserRequestModel(inputData);
-        var userExist = await _userService.DoesUserExists(userRequestModel.ContactId.GetValueOrDefault());
-        if (!userExist)
+        catch (Exception ex)
         {
-            return new NotFoundObjectResult($"User does not exist for this contact: {userRequestModel.ContactId}");
+            _logger.LogError(ex, "An exception occured");
+            throw;
         }
-
-        var addressId = await SyncDynamicsContactDetailsToUser(userRequestModel);
-
-        return new OkObjectResult(addressId);
 
     }
     private async Task<Guid?> SyncDynamicsContactDetailsToUser
