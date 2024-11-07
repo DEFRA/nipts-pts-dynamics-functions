@@ -21,11 +21,6 @@ namespace Defra.PTS.Common.ApiServices.Implementation
         private readonly IOwnerRepository _ownerRepository;
         private readonly IRepository<Entity.Address> _addressRepository;
 
-        // Cached JsonSerializerOptions instance for reuse
-        private static readonly JsonSerializerOptions _jsonOptions = new JsonSerializerOptions
-        {
-            PropertyNameCaseInsensitive = true
-        };
         public OwnerService(
             IOwnerRepository ownerRepository,
             IRepository<Entity.Address> addressRepository)
@@ -83,7 +78,10 @@ namespace Defra.PTS.Common.ApiServices.Implementation
             string owner = await new StreamReader(ownerStream).ReadToEndAsync();
             try
             {
-                Model.Owner? ownerModel = JsonSerializer.Deserialize<Model.Owner>(owner, _jsonOptions);
+                Model.Owner? ownerModel = JsonSerializer.Deserialize<Model.Owner>(owner, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
                 return ownerModel!;
             }
 

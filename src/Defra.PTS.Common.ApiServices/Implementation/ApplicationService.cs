@@ -28,12 +28,6 @@ namespace Defra.PTS.Common.ApiServices.Implementation
         private readonly ITravelDocumentRepository _travelDocumentRepository;
         private readonly IUserRepository _userRepository;
 
-        // Cached JsonSerializerOptions instance for reuse
-        private static readonly JsonSerializerOptions _jsonOptions = new JsonSerializerOptions
-        {
-            PropertyNameCaseInsensitive = true
-        };
-
         public ApplicationService(
               IApplicationRepository applicationRepository
             , IOwnerRepository ownerRepository
@@ -161,7 +155,10 @@ namespace Defra.PTS.Common.ApiServices.Implementation
             string application = await new StreamReader(applicationStream).ReadToEndAsync();
             try
             {
-                Models.ApplicationSubmittedMessageQueueModel? applicationSubmittedMessageQueueModel = JsonSerializer.Deserialize<Models.ApplicationSubmittedMessageQueueModel>(application, _jsonOptions);
+                Models.ApplicationSubmittedMessageQueueModel? applicationSubmittedMessageQueueModel = JsonSerializer.Deserialize<Models.ApplicationSubmittedMessageQueueModel>(application, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
                 return applicationSubmittedMessageQueueModel!;
             }
 
