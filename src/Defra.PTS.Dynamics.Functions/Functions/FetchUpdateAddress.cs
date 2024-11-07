@@ -64,23 +64,18 @@ public class FetchUpdateAddress
             {
                 throw new UserFunctionException("Invalid user input, is NUll or Empty");
             }
-            _logger.LogInformation("Calling GetUserRequestModel with {0}", inputData);
+
             var userRequestModel = await _userService.GetUserRequestModel(inputData);
 
-            _logger.LogInformation("Calling userExist with {0}", userRequestModel.ContactId.GetValueOrDefault());
             var userExist = await _userService.DoesUserExists(userRequestModel.ContactId.GetValueOrDefault());
             if (!userExist)
             {
                 return new NotFoundObjectResult($"User does not exist for this contact: {userRequestModel.ContactId}");
             }
 
-            _logger.LogInformation("Calling SyncDynamicsContactDetailsToUser with {0}", userRequestModel);
             var addressId = await SyncDynamicsContactDetailsToUser(userRequestModel);
 
-            _logger.LogInformation("returning with {0}", addressId);
-
             return new OkObjectResult(addressId);
-
         }
         catch (Exception ex)
         {
