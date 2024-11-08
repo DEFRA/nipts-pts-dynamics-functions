@@ -64,10 +64,10 @@ namespace Defra.PTS.Common.ApiServices.Implementation
                 var owner = await _ownerRepository.Find(application.OwnerId);
                 var address = await _addressRepository.GetAddress(application.OwnerAddressId, AddressType.Owner);
                 var pet = await _petRepository.Find(application.PetId);
-                var travelDocumentReference = await _travelDocumentRepository.GetTravelDocument(application.Id, owner.Id, pet.Id);
+                var travelDocumentReference = await _travelDocumentRepository.GetTravelDocument(application.Id, owner!.Id, pet!.Id);
                 var user = await _userRepository.Find(application.UserId);   
 
-                payloadObject.NiptsApplicantId = "contacts(" + user.ContactId.ToString() + ")";
+                payloadObject.NiptsApplicantId = "contacts(" + user!.ContactId.ToString() + ")";
                 payloadObject.NiptsPortalApplicationId = applicationId.ToString();
                 payloadObject.NiptsApplicationReference = application.ReferenceNumber;
                 payloadObject.NiptsDocumentReference = travelDocumentReference?.DocumentReferenceNumber;

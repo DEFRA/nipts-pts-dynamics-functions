@@ -105,7 +105,6 @@ namespace Defra.PTS.Common.ApiServices.Implementation
             }
             finally
             {
-                messageBatch?.Dispose();
                 await sender.DisposeAsync();
             }
         }

@@ -69,7 +69,7 @@ namespace Defra.PTS.Dynamics.Functions.Functions
             }
 
             Guid applicationId = currentApplication.ApplicationId;
-            log.LogInformation("Processing ApplicationId: ", applicationId.ToString());
+            
             string apiVersion = _dynamicOptions.Value.ApiVersion;
             string serviceUrl = await _keyVaultAccess.GetSecretAsync("Pts-Dynamics-Tenant-ServiceUrl");
             string apiUrl = $"{serviceUrl}/api/data/v{apiVersion}/nipts_ptdapplications";
@@ -80,8 +80,6 @@ namespace Defra.PTS.Dynamics.Functions.Functions
             _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
-            log.LogInformation("Request Headers for application: ", applicationId.ToString(), _httpClient.DefaultRequestHeaders.ToString());
-
             var applicationObject = await _applicationService.GetApplication(applicationId);
             if (applicationObject == null)
             {
@@ -89,7 +87,7 @@ namespace Defra.PTS.Dynamics.Functions.Functions
             }
 
             string jsonData = JsonConvert.SerializeObject(applicationObject);
-            log.LogInformation("Posting Json Payload: ", jsonData);
+            log.LogInformation("Request Headers for application: {0} {1} Posting Json Payload: {2}", applicationId.ToString(), _httpClient.DefaultRequestHeaders.ToString(), jsonData);
             StringContent content = new StringContent(jsonData, Encoding.UTF8, "application/json");
             HttpResponseMessage response = await _httpClient.PostAsync(apiUrl, content);
             log.LogInformation("POST Response for application: ", applicationId.ToString(), response);
@@ -139,7 +137,7 @@ namespace Defra.PTS.Dynamics.Functions.Functions
                 if (currentApplication == null ||
                    currentApplication.Id == Guid.Empty)
                 {
-                    log.LogError("Invalid Object from message :" + myQueueItem);
+                    log.LogError("Invalid Object from message : {0}", myQueueItem);
                     throw new QueueReaderException("Invalid Object from message :" + myQueueItem);                    
                 }                
                 await _applicationService.UpdateApplicationStatus(currentApplication);

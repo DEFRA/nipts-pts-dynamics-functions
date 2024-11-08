@@ -343,7 +343,7 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
 
             _repoAddressService!
             .Setup(a => a.Find(It.IsAny<Guid>()))
-            .Returns(Task.FromResult<Entity.Address>(null!));
+            .Returns(Task.FromResult<Entity.Address>(null!)!);
 
             Model.UserRequest userRequest = new Model.UserRequest();
             userRequest.Address = modelAddress;
@@ -387,7 +387,7 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
                 CreatedOn = DateTime.Now
             };
 
-            _repoAddressService!.Setup(a => a.Find(It.IsAny<Guid>())).Returns(Task.FromResult(address));
+            _repoAddressService!.Setup(a => a.Find(It.IsAny<Guid>())).Returns(Task.FromResult(address)!);
 
             Model.UserRequest userRequest = new Model.UserRequest();
             userRequest.Address = modelAddress;
