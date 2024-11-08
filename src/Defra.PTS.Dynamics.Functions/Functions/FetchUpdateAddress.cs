@@ -33,6 +33,9 @@ public class FetchUpdateAddress
     private readonly IKeyVaultAccess _keyVaultAccess;
     private readonly HttpClient _httpClient;
 
+    private const string TagName = "FetchAndUpdateAddress";
+
+
     public FetchUpdateAddress(
           ILogger<FetchUpdateAddress> log
         , IDynamicsService dynamicsService
@@ -50,7 +53,7 @@ public class FetchUpdateAddress
     }
 
     [FunctionName("FetchAndUpdateAddress")]
-    [OpenApiOperation(operationId: "FetchAndUpdateAddress", tags: new[] { "FetchAndUpdateAddress" })]
+    [OpenApiOperation(operationId: "FetchAndUpdateAddress", tags: new[] { TagName })]
     [OpenApiRequestBody(contentType: "application/json", bodyType: typeof(Model.UserRequest), Description = "Sync User Details from Dynamics")]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(string), Description = "The OK response")]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.NotFound, contentType: "application/json", bodyType: typeof(string), Description = "The NotFound response")]
@@ -139,11 +142,9 @@ public class FetchUpdateAddress
         {
             bool isValidJson = JsonHelper.IsValidJson(responseContent);
             if (isValidJson)
-            {
-                // Log the error status code                
+            {        
                 DynamicsResponseDto dynamicsEntryCreationResponse = JsonConvert.DeserializeObject<DynamicsResponseDto>(responseContent);
-                _logger.LogError("Error: {StatusCode} - {ReasonPhrase}", response.StatusCode, response.ReasonPhrase);
-                _logger.LogError("Dynamics Response Error : {Code} - {Message}", dynamicsEntryCreationResponse.Error.Code, dynamicsEntryCreationResponse.Error.Message);
+                _logger.LogError("Error: {StatusCode} - {ReasonPhrase} Dynamics Response Error : {Code} - {Message}", response.StatusCode, response.ReasonPhrase, dynamicsEntryCreationResponse.Error.Code, dynamicsEntryCreationResponse.Error.Message);
                 throw new UserFunctionException($"{response.ReasonPhrase} - {dynamicsEntryCreationResponse.Error.Code} - {dynamicsEntryCreationResponse.Error.Message}");
             }
             else

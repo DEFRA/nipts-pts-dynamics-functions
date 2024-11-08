@@ -15,14 +15,6 @@ namespace Defra.PTS.Common.Repositories.Implementation
     [ExcludeFromCodeCoverage]
     public class PetRepository : Repository<Entity.Pet>, IPetRepository
     {
-        private CommonDbContext petContext
-        {
-            get
-            {
-                return _dbContext as CommonDbContext;
-            }
-        }
-
         public PetRepository(DbContext dbContext) : base(dbContext)
         {
         }

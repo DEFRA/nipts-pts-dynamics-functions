@@ -24,6 +24,9 @@ namespace Defra.PTS.Dynamics.Functions.Functions
     {
         private readonly IApplicationService _applicationService;
         private readonly IDynamicsService _dynamicsService;
+
+        private const string TagName = "name";
+
         public HealthCheck(
             IApplicationService applicationService
             , IDynamicsService dynamicsService)
@@ -33,7 +36,7 @@ namespace Defra.PTS.Dynamics.Functions.Functions
         }
 
         [FunctionName("HealthCheck")]
-        [OpenApiOperation(operationId: "Run", tags: new[] { "name" })]
+        [OpenApiOperation(operationId: "Run", tags: new[] { TagName })]
         [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "text/plain", bodyType: typeof(string), Description = "The OK response")]
         public async Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "health")] HttpRequest req

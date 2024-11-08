@@ -27,6 +27,8 @@ namespace Defra.PTS.Dynamics.Functions.Functions
         private readonly IApplicationService _applicationService;
         private readonly IServiceBusService _azureServiceBusService;
 
+        private const string TagName = "QueueWriter";
+
         public QueueWriter(
             IApplicationService applicationService
             , IServiceBusService azureServiceBusService)
@@ -36,7 +38,7 @@ namespace Defra.PTS.Dynamics.Functions.Functions
         }
 
         [FunctionName("WriteApplicationToQueue")]
-        [OpenApiOperation(operationId: "WriteApplicationToQueue", tags: new[] { "QueueWriter" })]
+        [OpenApiOperation(operationId: "WriteApplicationToQueue", tags: new[] { TagName })]
         [OpenApiRequestBody(contentType: "application/json", bodyType: typeof(Model.ApplicationSubmittedMessageQueueModel), Description = "Add Application to Queue")]
         [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(string), Description = "The OK response")]
         public async Task<IActionResult> WriteApplicationToQueue(

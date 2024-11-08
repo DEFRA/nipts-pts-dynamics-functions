@@ -69,7 +69,7 @@ namespace Defra.PTS.Dynamics.Functions.Functions
             }
 
             Guid applicationId = currentApplication.ApplicationId;
-            log.LogInformation("Processing ApplicationId: ", applicationId.ToString());
+            
             string apiVersion = _dynamicOptions.Value.ApiVersion;
             string serviceUrl = await _keyVaultAccess.GetSecretAsync("Pts-Dynamics-Tenant-ServiceUrl");
             string apiUrl = $"{serviceUrl}/api/data/v{apiVersion}/nipts_ptdapplications";
@@ -139,7 +139,7 @@ namespace Defra.PTS.Dynamics.Functions.Functions
                 if (currentApplication == null ||
                    currentApplication.Id == Guid.Empty)
                 {
-                    log.LogError("Invalid Object from message :" + myQueueItem);
+                    log.LogError("Invalid Object from message : {0}", myQueueItem);
                     throw new QueueReaderException("Invalid Object from message :" + myQueueItem);                    
                 }                
                 await _applicationService.UpdateApplicationStatus(currentApplication);
