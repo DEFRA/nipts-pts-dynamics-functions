@@ -19,7 +19,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
-using model = Defra.PTS.Common.Models;
+using Model = Defra.PTS.Common.Models;
 
 namespace Defra.PTS.Dynamics.Functions.Functions;
 
@@ -51,39 +51,32 @@ public class FetchUpdateAddress
 
     [FunctionName("FetchAndUpdateAddress")]
     [OpenApiOperation(operationId: "FetchAndUpdateAddress", tags: new[] { "FetchAndUpdateAddress" })]
-    [OpenApiRequestBody(contentType: "application/json", bodyType: typeof(model.UserRequest), Description = "Sync User Details from Dynamics")]
+    [OpenApiRequestBody(contentType: "application/json", bodyType: typeof(Model.UserRequest), Description = "Sync User Details from Dynamics")]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(string), Description = "The OK response")]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.NotFound, contentType: "application/json", bodyType: typeof(string), Description = "The NotFound response")]
     public async Task<IActionResult> FetchAndUpdateAddress(
         [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "fetchupdateaddress")] HttpRequest req)
     {
-        try
+
+        var inputData = req?.Body;
+        if (inputData == null)
         {
-            var inputData = req?.Body;
-            if (inputData == null)
-            {
-                throw new UserFunctionException("Invalid user input, is NUll or Empty");
-            }
-            var userRequestModel = await _userService.GetUserRequestModel(inputData);
-            var userExist = await _userService.DoesUserExists(userRequestModel.ContactId.GetValueOrDefault());
-            if (!userExist)
-            {
-                return new NotFoundObjectResult($"User does not exist for this contact: {userRequestModel.ContactId}");
-            }
-
-            var addressId = await SyncDynamicsContactDetailsToUser(userRequestModel);
-
-            return new OkObjectResult(addressId);
-
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError("Error Stack: ", ex.StackTrace);
-            _logger.LogError("Exception Message: ", ex.Message);
-            throw;
+            throw new UserFunctionException("Invalid user input, is NUll or Empty");
         }
 
+        var userRequestModel = await _userService.GetUserRequestModel(inputData);
+
+        var userExist = await _userService.DoesUserExists(userRequestModel.ContactId.GetValueOrDefault());
+        if (!userExist)
+        {
+            return new NotFoundObjectResult($"User does not exist for this contact: {userRequestModel.ContactId}");
+        }
+
+        var addressId = await SyncDynamicsContactDetailsToUser(userRequestModel);
+
+        return new OkObjectResult(addressId);
     }
+
     private async Task<Guid?> SyncDynamicsContactDetailsToUser
         (UserRequest userRequestModel)
     {

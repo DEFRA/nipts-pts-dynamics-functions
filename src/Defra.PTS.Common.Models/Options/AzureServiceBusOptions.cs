@@ -8,7 +8,7 @@ namespace Defra.PTS.Common.Models.Options
 {
     public class AzureServiceBusOptions
     {
-        public string SubmitQueueName { get; set; }
-        public string UpdateQueueName { get; set; }
+        public string? SubmitQueueName { get; set; }
+        public string? UpdateQueueName { get; set; }
     }
 }

@@ -1,4 +1,4 @@
-﻿using entity = Defra.PTS.Common.Entities;
+﻿using Entity = Defra.PTS.Common.Entities;
 using Defra.PTS.Common.Repositories.Interface;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -12,10 +12,10 @@ using System.Diagnostics.CodeAnalysis;
 namespace Defra.PTS.Common.Repositories.Implementation
 {
     [ExcludeFromCodeCoverage]
-    public class OwnerRepository : Repository<entity.Owner>, IOwnerRepository
+    public class OwnerRepository : Repository<Entity.Owner>, IOwnerRepository
     {
 
-        private CommonDbContext userContext
+        private CommonDbContext? userContext
         {
             get
             {
@@ -29,12 +29,12 @@ namespace Defra.PTS.Common.Repositories.Implementation
 
         public async Task<bool> DoesOwnerExists(string ownerEmailAddress)
         {
-           return await userContext.Owner.AnyAsync(a => a.Email == ownerEmailAddress);
+           return await userContext!.Owner.AnyAsync(a => a.Email == ownerEmailAddress);
         }
 
-        public async Task<Owner> GetOwner(Guid ownerId)
+        public async Task<Owner?> GetOwner(Guid ownerId)
         {
-            return await userContext.Owner.FirstOrDefaultAsync(a => a.Id == ownerId);
+            return await userContext!.Owner.FirstOrDefaultAsync(a => a.Id == ownerId);
         }
     }
 }
