@@ -1,4 +1,4 @@
-﻿using entity = Defra.PTS.Common.Entities;
+﻿using Entity = Defra.PTS.Common.Entities;
 using Defra.PTS.Common.Entities;
 using Defra.PTS.Common.Repositories.Interface;
 using System;
@@ -14,9 +14,9 @@ using System.Diagnostics.CodeAnalysis;
 namespace Defra.PTS.Common.Repositories.Implementation
 {
     [ExcludeFromCodeCoverage]
-    public class ApplicationRepository : Repository<entity.Application>, IApplicationRepository
+    public class ApplicationRepository : Repository<Entity.Application>, IApplicationRepository
     {
-        private CommonDbContext commonContext
+        private CommonDbContext? CommonContext
         {
             get
             {
@@ -28,9 +28,9 @@ namespace Defra.PTS.Common.Repositories.Implementation
         {
         }
 
-        public async Task<entity.Application> GetApplicationById(Guid applicationId)
+        public async Task<Entity.Application?> GetApplicationById(Guid applicationId)
         {
-            return await commonContext.Application.FirstOrDefaultAsync(a => a.Id == applicationId);
+            return await CommonContext!.Application.FirstOrDefaultAsync(a => a.Id == applicationId);
         }
 
         public async Task<bool> PerformHealthCheckLogic()

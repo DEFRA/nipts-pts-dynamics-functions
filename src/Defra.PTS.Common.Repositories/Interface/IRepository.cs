@@ -9,7 +9,7 @@ namespace Defra.PTS.Common.Repositories.Interface
     public interface IRepository<TEntity> where TEntity : class
     {
         IEnumerable<TEntity> GetAll();
-        Task<TEntity> Find(object id);
+        Task<TEntity?> Find(object id);
         Task Add(TEntity entity);
         void Update(TEntity entity);
         void Remove(TEntity entity);

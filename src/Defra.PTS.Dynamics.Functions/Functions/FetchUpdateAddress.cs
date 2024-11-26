@@ -19,7 +19,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
-using model = Defra.PTS.Common.Models;
+using Model = Defra.PTS.Common.Models;
 
 namespace Defra.PTS.Dynamics.Functions.Functions;
 
@@ -32,6 +32,9 @@ public class FetchUpdateAddress
     private readonly IUserService _userService;
     private readonly IKeyVaultAccess _keyVaultAccess;
     private readonly HttpClient _httpClient;
+
+    private const string TagName = "FetchAndUpdateAddress";
+
 
     public FetchUpdateAddress(
           ILogger<FetchUpdateAddress> log
@@ -50,40 +53,33 @@ public class FetchUpdateAddress
     }
 
     [FunctionName("FetchAndUpdateAddress")]
-    [OpenApiOperation(operationId: "FetchAndUpdateAddress", tags: new[] { "FetchAndUpdateAddress" })]
-    [OpenApiRequestBody(contentType: "application/json", bodyType: typeof(model.UserRequest), Description = "Sync User Details from Dynamics")]
+    [OpenApiOperation(operationId: "FetchAndUpdateAddress", tags: new[] { TagName })]
+    [OpenApiRequestBody(contentType: "application/json", bodyType: typeof(Model.UserRequest), Description = "Sync User Details from Dynamics")]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(string), Description = "The OK response")]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.NotFound, contentType: "application/json", bodyType: typeof(string), Description = "The NotFound response")]
     public async Task<IActionResult> FetchAndUpdateAddress(
         [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "fetchupdateaddress")] HttpRequest req)
     {
-        try
+
+        var inputData = req?.Body;
+        if (inputData == null)
         {
-            var inputData = req?.Body;
-            if (inputData == null)
-            {
-                throw new UserFunctionException("Invalid user input, is NUll or Empty");
-            }
-            var userRequestModel = await _userService.GetUserRequestModel(inputData);
-            var userExist = await _userService.DoesUserExists(userRequestModel.ContactId.GetValueOrDefault());
-            if (!userExist)
-            {
-                return new NotFoundObjectResult($"User does not exist for this contact: {userRequestModel.ContactId}");
-            }
-
-            var addressId = await SyncDynamicsContactDetailsToUser(userRequestModel);
-
-            return new OkObjectResult(addressId);
-
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError("Error Stack: ", ex.StackTrace);
-            _logger.LogError("Exception Message: ", ex.Message);
-            throw;
+            throw new UserFunctionException("Invalid user input, is NUll or Empty");
         }
 
+        var userRequestModel = await _userService.GetUserRequestModel(inputData);
+
+        var userExist = await _userService.DoesUserExists(userRequestModel.ContactId.GetValueOrDefault());
+        if (!userExist)
+        {
+            return new NotFoundObjectResult($"User does not exist for this contact: {userRequestModel.ContactId}");
+        }
+
+        var addressId = await SyncDynamicsContactDetailsToUser(userRequestModel);
+
+        return new OkObjectResult(addressId);
     }
+
     private async Task<Guid?> SyncDynamicsContactDetailsToUser
         (UserRequest userRequestModel)
     {
@@ -146,11 +142,9 @@ public class FetchUpdateAddress
         {
             bool isValidJson = JsonHelper.IsValidJson(responseContent);
             if (isValidJson)
-            {
-                // Log the error status code                
+            {        
                 DynamicsResponseDto dynamicsEntryCreationResponse = JsonConvert.DeserializeObject<DynamicsResponseDto>(responseContent);
-                _logger.LogError("Error: {StatusCode} - {ReasonPhrase}", response.StatusCode, response.ReasonPhrase);
-                _logger.LogError("Dynamics Response Error : {Code} - {Message}", dynamicsEntryCreationResponse.Error.Code, dynamicsEntryCreationResponse.Error.Message);
+                _logger.LogError("Error: {StatusCode} - {ReasonPhrase} Dynamics Response Error : {Code} - {Message}", response.StatusCode, response.ReasonPhrase, dynamicsEntryCreationResponse.Error.Code, dynamicsEntryCreationResponse.Error.Message);
                 throw new UserFunctionException($"{response.ReasonPhrase} - {dynamicsEntryCreationResponse.Error.Code} - {dynamicsEntryCreationResponse.Error.Message}");
             }
             else

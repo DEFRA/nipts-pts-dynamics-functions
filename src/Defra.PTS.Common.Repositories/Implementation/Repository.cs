@@ -31,14 +31,14 @@ namespace Defra.PTS.Common.Repositories.Implementation
 
         public void Delete(object id)
         {
-            TEntity entity = _dbContext.Set<TEntity>().Find(id);
+            TEntity entity = _dbContext.Set<TEntity>().Find(id)!;
             if (entity != null)
             {
                 _dbContext.Set<TEntity>().Remove(entity);
             }
         }
 
-        public async Task<TEntity> Find(object id)
+        public async Task<TEntity?> Find(object id)
         {
             return await _dbContext.Set<TEntity>().FindAsync(id);
         }

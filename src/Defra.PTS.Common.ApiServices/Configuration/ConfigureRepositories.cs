@@ -14,7 +14,7 @@ namespace Defra.PTS.Common.ApiServices.Configuration
 {
     [ExcludeFromCodeCoverage]
     public static class ConfigureRepositories
-    {        
+    {
         public static IServiceCollection AddDefraRepositoryServices(this IServiceCollection services, string conn)
         {
             services.AddDbContext<CommonDbContext>((context) =>

@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using System.Diagnostics.CodeAnalysis;
-using entity = Defra.PTS.Common.Entities;
+using Entity = Defra.PTS.Common.Entities;
 
 namespace Defra.PTS.Common.Repositories
 {
@@ -12,13 +12,13 @@ namespace Defra.PTS.Common.Repositories
                 
         }
 
-        public DbSet<entity.User> User { get; set; }
-        public DbSet<entity.Owner> Owner { get; set; }
-        public DbSet<entity.Address> Address { get; set; }
-        public DbSet<entity.Application> Application { get; set; }
-        public DbSet<entity.Pet> Pet { get; set; }
-        public DbSet<entity.Breed> Breed { get; set; }
-        public DbSet<entity.Colour> Colour { get; set; }
-        public DbSet<entity.TravelDocument> TravelDocument { get; set; }
+        public DbSet<Entity.User>? User { get; set; }
+        public DbSet<Entity.Owner> Owner { get; set; }
+        public DbSet<Entity.Address> Address { get; set; }
+        public DbSet<Entity.Application> Application { get; set; }
+        public DbSet<Entity.Pet> Pet { get; set; }
+        public DbSet<Entity.Breed> Breed { get; set; }
+        public DbSet<Entity.Colour> Colour { get; set; }
+        public DbSet<Entity.TravelDocument> TravelDocument { get; set; }
     }
 }

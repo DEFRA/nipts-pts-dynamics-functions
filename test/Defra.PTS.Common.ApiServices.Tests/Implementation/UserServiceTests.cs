@@ -5,8 +5,8 @@ using Defra.PTS.Common.Repositories.Interface;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework;
-using entity = Defra.PTS.Common.Entities;
-using model = Defra.PTS.Common.Models;
+using Entity = Defra.PTS.Common.Entities;
+using Model = Defra.PTS.Common.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,24 +19,22 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
     [TestFixture]
     public class UserServiceTests
     {
-        private Mock<ILogger<UserService>> _loggerMock;
-        private Mock<IUserRepository> _userRepository;
-        private Mock<IRepository<entity.Address>> _repoAddressService;
-        UserService sut;
+        private Mock<IUserRepository>? _userRepository;
+        private Mock<IRepository<Entity.Address>>? _repoAddressService;
+        UserService? sut;
 
         [SetUp]
         public void SetUp()
         {
-            _loggerMock = new Mock<ILogger<UserService>>();
             _userRepository = new Mock<IUserRepository>();
-            _repoAddressService = new Mock<IRepository<entity.Address>>();
+            _repoAddressService = new Mock<IRepository<Entity.Address>>();
         }
 
         [Test]
         public async Task CreateUser_WhenValidData_ReturnsGuid()
         {
             Guid addressGuid = Guid.Empty;
-            var modelAddress = new model.Address()
+            var modelAddress = new Model.Address()
             {
                 AddressLineOne = "19 First Avenue",
                 AddressLineTwo = "",
@@ -50,7 +48,7 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
                 CreatedOn = DateTime.Now
             };
 
-            var modelUser = new model.User
+            var modelUser = new Model.User
             {
                 Address = modelAddress,
                 Email = "cuan@test.com",
@@ -68,7 +66,7 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
 
 
 
-            var address = new entity.Address()
+            var address = new Entity.Address()
             {
                 AddressLineOne = "19 First Avenue",
                 AddressLineTwo = "",
@@ -81,12 +79,12 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
                 CreatedBy = Guid.Parse("AB4ECAEA-877C-4560-EDE4-08DBD163F0B6"),
                 CreatedOn = DateTime.Now
             };
-            _repoAddressService.Setup(a => a.Add(address)).Returns(Task.FromResult(address.Id = addressGuid));
+            _repoAddressService!.Setup(a => a.Add(address)).Returns(Task.FromResult(address.Id = addressGuid));
             await _repoAddressService.Object.Add(address);
             _repoAddressService.Setup(a => a.SaveChanges()).ReturnsAsync(1);
 
             Guid userGuid = Guid.Empty;
-            var user = new entity.User
+            var user = new Entity.User
             {
                 Id = userGuid,
                 Email = "cuan@test.com",
@@ -103,13 +101,13 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
                 CreatedOn = DateTime.Now
             };
 
-            _userRepository.Setup(a => a.Add(user)).Returns(Task.FromResult(user.Id = userGuid));
+            _userRepository!.Setup(a => a.Add(user)).Returns(Task.FromResult(user.Id = userGuid));
 
             await _userRepository.Object.Add(user);
             _userRepository.Setup(a => a.SaveChanges()).ReturnsAsync(1);
 
 
-            sut = new UserService(_loggerMock.Object, _userRepository.Object, _repoAddressService.Object);
+            sut = new UserService(_userRepository.Object, _repoAddressService.Object);
 
             var result = sut.CreateUser(modelUser);
             Assert.AreEqual(userGuid, result.Result);
@@ -123,7 +121,7 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
             Guid addressGuid = Guid.NewGuid();
 
             Guid userGuid = Guid.Empty;
-            var user = new entity.User
+            var user = new Entity.User
             {
                 Id = userGuid,
                 Email = "cuan@test.com",
@@ -139,12 +137,12 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
                 CreatedBy = Guid.Parse("FB4ECAEA-877C-4560-EDE4-08DBD163F0B6"),
                 CreatedOn = DateTime.Now
             };
-            _userRepository.Setup(a => a.GetUser(It.IsAny<string>())).Returns(Task.FromResult(user));
+            _userRepository!.Setup(a => a.GetUser(It.IsAny<string>())).Returns(Task.FromResult(user)!);
             _userRepository.Setup(a => a.Update(user));
             _userRepository.Setup(a => a.SaveChanges()).ReturnsAsync(1);
 
 
-            sut = new UserService(_loggerMock.Object, _userRepository.Object, _repoAddressService.Object);
+            sut = new UserService(_userRepository.Object, _repoAddressService!.Object);
 
             var result = sut.UpdateUser("firstname", "lastname", "cuan@test.com", "9999999999", addressGuid);
             Assert.AreEqual(userGuid, result.Result);
@@ -155,38 +153,7 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
         [Test]
         public void DoesUserExists_WhenInValidData_ReturnsError()
         {
-            Guid addressGuid = Guid.Empty;
-            var modelAddress = new model.Address()
-            {
-                AddressLineOne = "19 First Avenue",
-                AddressLineTwo = "",
-                TownOrCity = "Grays",
-                County = "Essex",
-                CountryName = "UK",
-                PostCode = "RM13 4FT",
-
-                IsActive = true,
-                CreatedBy = Guid.Parse("AB4ECAEA-877C-4560-EDE4-08DBD163F0B6"),
-                CreatedOn = DateTime.Now
-            };
-
-            var modelUser = new model.User
-            {
-                Address = modelAddress,
-                Email = "cuan@test.com",
-                FullName = "Cuan Brown",
-                FirstName = "Cuan",
-                LastName = "Brown",
-                Telephone = "9999999999",
-                ContactId = Guid.Parse("EB4ECAEA-877C-4560-EDE4-08DBD163F0B6"),
-                Uniquereference = "123",
-                SignInDateTime = DateTime.Now,
-                SignOutDateTime = DateTime.Now,
-                CreatedBy = Guid.Parse("FB4ECAEA-877C-4560-EDE4-08DBD163F0B6"),
-                CreatedOn = DateTime.Now
-            };
-
-            sut = new UserService(_loggerMock.Object, _userRepository.Object, _repoAddressService.Object);
+            sut = new UserService(_userRepository!.Object, _repoAddressService!.Object);
             var expectedResult = $"Invalid ContactId";
             var result = Assert.ThrowsAsync<UserFunctionException>(() => sut.DoesUserExists(Guid.Empty));
 
@@ -198,41 +165,10 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
         [Test]
         public void DoesUserExists_WheValidData_ReturnsSuccess()
         {
-            Guid addressGuid = Guid.Empty;
-            var modelAddress = new model.Address()
-            {
-                AddressLineOne = "19 First Avenue",
-                AddressLineTwo = "",
-                TownOrCity = "Grays",
-                County = "Essex",
-                CountryName = "UK",
-                PostCode = "RM13 4FT",
-
-                IsActive = true,
-                CreatedBy = Guid.Parse("AB4ECAEA-877C-4560-EDE4-08DBD163F0B6"),
-                CreatedOn = DateTime.Now
-            };
-
-            var modelUser = new model.User
-            {
-                Address = modelAddress,
-                Email = "cuan@test.com",
-                FullName = "Cuan Brown",
-                FirstName = "Cuan",
-                LastName = "Brown",
-                Telephone = "9999999999",
-                ContactId = Guid.Parse("EB4ECAEA-877C-4560-EDE4-08DBD163F0B6"),
-                Uniquereference = "123",
-                SignInDateTime = DateTime.Now,
-                SignOutDateTime = DateTime.Now,
-                CreatedBy = Guid.Parse("FB4ECAEA-877C-4560-EDE4-08DBD163F0B6"),
-                CreatedOn = DateTime.Now
-            };
-
-            _userRepository.Setup(a => a.DoesUserExists(It.IsAny<Guid>())).Returns(Task.FromResult(true));
+            _userRepository!.Setup(a => a.DoesUserExists(It.IsAny<Guid>())).Returns(Task.FromResult(true));
 
 
-            sut = new UserService(_loggerMock.Object, _userRepository.Object, _repoAddressService.Object);
+            sut = new UserService(_userRepository.Object, _repoAddressService!.Object);
             var result = sut.DoesUserExists(Guid.NewGuid());
             Assert.IsTrue(result.Result);
         }
@@ -241,9 +177,9 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
         public void DoesAddressExists_WhenValidData_ReturnsSuccess()
         {
             bool expectedResult = true;
-            _userRepository.Setup(a => a.DoesAddresssExists(It.IsAny<Guid>())).Returns(Task.FromResult(true));
+            _userRepository!.Setup(a => a.DoesAddresssExists(It.IsAny<Guid>())).Returns(Task.FromResult(true));
 
-            sut = new UserService(_loggerMock.Object, _userRepository.Object, _repoAddressService.Object);
+            sut = new UserService(_userRepository.Object, _repoAddressService!.Object);
             var result = sut.DoesAddressExists(Guid.Empty);
 
             Assert.IsNotNull(result);
@@ -253,21 +189,7 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
         [Test]
         public void GetUserModel_WhenValidData_ReturnsModel()
         {
-            var modelAddress = new model.Address()
-            {
-                AddressLineOne = "19 First Avenue",
-                AddressLineTwo = "",
-                TownOrCity = "Grays",
-                County = "Essex",
-                CountryName = "UK",
-                PostCode = "RM13 4FT",
-
-                IsActive = true,
-                CreatedBy = Guid.Parse("AB4ECAEA-877C-4560-EDE4-08DBD163F0B6"),
-                CreatedOn = DateTime.Now
-            };
-
-            sut = new UserService(_loggerMock.Object, _userRepository.Object, _repoAddressService.Object);
+            sut = new UserService(_userRepository!.Object, _repoAddressService!.Object);
 
             var json = "{" +
                     "\"id\":\"00000000-0000-0000-0000-000000000000\"," +
@@ -289,7 +211,7 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
                 "}";
 
             var memoryStream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(json));
-            sut = new UserService(_loggerMock.Object, _userRepository.Object, _repoAddressService.Object);
+            sut = new UserService(_userRepository.Object, _repoAddressService.Object);
             var result = sut.GetUserModel(memoryStream);
             Assert.IsNotNull(result);
             Assert.AreEqual("Cuan", result.Result.FirstName);
@@ -300,21 +222,7 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
         [Test]
         public void GetUserEmailModel_WhenValidData_ReturnsModel()
         {
-            var modelAddress = new model.Address()
-            {
-                AddressLineOne = "19 First Avenue",
-                AddressLineTwo = "",
-                TownOrCity = "Grays",
-                County = "Essex",
-                CountryName = "UK",
-                PostCode = "RM13 4FT",
-
-                IsActive = true,
-                CreatedBy = Guid.Parse("AB4ECAEA-877C-4560-EDE4-08DBD163F0B6"),
-                CreatedOn = DateTime.Now
-            };
-
-            sut = new UserService(_loggerMock.Object, _userRepository.Object, _repoAddressService.Object);
+            sut = new UserService(_userRepository!.Object, _repoAddressService!.Object);
 
             var json = "{" +
                  "\"Email\":\"tt@tt.com\"," +
@@ -323,7 +231,7 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
                 "}";
 
             var memoryStream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(json));
-            sut = new UserService(_loggerMock.Object, _userRepository.Object, _repoAddressService.Object);
+            sut = new UserService(_userRepository.Object, _repoAddressService.Object);
             var result = sut.GetUserModel(memoryStream);
             Assert.IsNotNull(result);
             Assert.AreEqual("tt@tt.com", result.Result.Email);
@@ -335,9 +243,9 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
             Guid item1 = Guid.NewGuid();
             Guid item2 = Guid.NewGuid();
             string item3 = "test";
-            _userRepository.Setup(a => a.GetUserDetails(It.IsAny<Guid>())).ReturnsAsync((item1, item2, item3));
+            _userRepository!.Setup(a => a.GetUserDetails(It.IsAny<Guid>())).ReturnsAsync((item1, item2, item3));
 
-            sut = new UserService(_loggerMock.Object, _userRepository.Object, _repoAddressService.Object);
+            sut = new UserService(_userRepository.Object, _repoAddressService!.Object);
             var result = sut.GetUserDetails(Guid.Empty);
 
             Assert.IsNotNull(result);
@@ -357,7 +265,7 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
 
             var memoryStream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(json));
 
-            sut = new UserService(_loggerMock.Object, _userRepository.Object, _repoAddressService.Object);
+            sut = new UserService(_userRepository!.Object, _repoAddressService!.Object);
             var result = sut.GetUserRequestModel(memoryStream);
 
             Assert.IsNotNull(result);
@@ -369,14 +277,14 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
         {
             Guid addressId = Guid.Empty;
 
-            model.UserRequest userRequest = new model.UserRequest();
+            Model.UserRequest userRequest = new Model.UserRequest();
             userRequest.Address = null;
 
-            _repoAddressService.Setup(a => a.Add(It.IsAny<entity.Address>())).Returns(Task.CompletedTask);
+            _repoAddressService!.Setup(a => a.Add(It.IsAny<Entity.Address>())).Returns(Task.CompletedTask);
             _repoAddressService.Setup(a => a.SaveChanges()).ReturnsAsync(1);
 
 
-            sut = new UserService(_loggerMock.Object, _userRepository.Object, _repoAddressService.Object);
+            sut = new UserService(_userRepository!.Object, _repoAddressService.Object);
             var result = sut.AddAddress(userRequest);
 
             Assert.IsNotNull(result);
@@ -387,7 +295,7 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
         public void AddAddress_WhenValidData_ReturnsValidDataBack()
         {
             Guid addressId = Guid.Empty;
-            var modelAddress = new model.Address()
+            var modelAddress = new Model.Address()
             {
                 AddressLineOne = "19 First Avenue",
                 AddressLineTwo = "",
@@ -401,14 +309,14 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
                 CreatedOn = DateTime.Now
             };
 
-            model.UserRequest userRequest = new model.UserRequest();
+            Model.UserRequest userRequest = new Model.UserRequest();
             userRequest.Address = modelAddress;
 
-            _repoAddressService.Setup(a => a.Add(It.IsAny<entity.Address>())).Returns(Task.CompletedTask);
+            _repoAddressService!.Setup(a => a.Add(It.IsAny<Entity.Address>())).Returns(Task.CompletedTask);
             _repoAddressService.Setup(a => a.SaveChanges()).ReturnsAsync(1);
 
 
-            sut = new UserService(_loggerMock.Object, _userRepository.Object, _repoAddressService.Object);
+            sut = new UserService(_userRepository!.Object, _repoAddressService.Object);
             var result = sut.AddAddress(userRequest);
 
             Assert.IsNotNull(result);
@@ -419,7 +327,7 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
         public void UpdateAddress_CreateEntry_WhenNullData_ReturnsValidDataBack()
         {
             Guid addressId = Guid.Parse("AB4ECAEA-877C-4560-EDE4-08DBD163F0B6");
-            var modelAddress = new model.Address()
+            var modelAddress = new Model.Address()
             {
                 Id = addressId,
                 AddressLineOne = "19 First Avenue",
@@ -433,14 +341,14 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
                 CreatedOn = DateTime.Now
             };
 
-            _repoAddressService
+            _repoAddressService!
             .Setup(a => a.Find(It.IsAny<Guid>()))
-            .Returns(Task.FromResult<entity.Address>(null!));
+            .Returns(Task.FromResult<Entity.Address>(null!)!);
 
-            model.UserRequest userRequest = new model.UserRequest();
+            Model.UserRequest userRequest = new Model.UserRequest();
             userRequest.Address = modelAddress;
 
-            sut = new UserService(_loggerMock.Object, _userRepository.Object, _repoAddressService.Object);
+            sut = new UserService(_userRepository!.Object, _repoAddressService.Object);
             var result = sut.UpdateAddress(userRequest, addressId);
 
             Assert.IsNotNull(result);
@@ -451,7 +359,7 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
         public void UpdateAddress_WhenValidData_ReturnsValidDataBack()
         {
             Guid addressId = Guid.Parse("AB4ECAEA-877C-4560-EDE4-08DBD163F0B6");
-            var modelAddress = new model.Address()
+            var modelAddress = new Model.Address()
             {
                 Id = addressId,
                 AddressLineOne = "19 First Avenue",
@@ -465,7 +373,7 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
                 CreatedOn = DateTime.Now
             };
 
-            var address = new entity.Address()
+            var address = new Entity.Address()
             {
                 Id = addressId,
                 AddressLineOne = "19 First Avenue",
@@ -479,12 +387,12 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
                 CreatedOn = DateTime.Now
             };
 
-            _repoAddressService.Setup(a => a.Find(It.IsAny<Guid>())).Returns(Task.FromResult(address));
+            _repoAddressService!.Setup(a => a.Find(It.IsAny<Guid>())).Returns(Task.FromResult(address)!);
 
-            model.UserRequest userRequest = new model.UserRequest();
+            Model.UserRequest userRequest = new Model.UserRequest();
             userRequest.Address = modelAddress;
 
-            sut = new UserService(_loggerMock.Object, _userRepository.Object, _repoAddressService.Object);
+            sut = new UserService(_userRepository!.Object, _repoAddressService.Object);
             var result = sut.UpdateAddress(userRequest, addressId);
 
             Assert.IsNotNull(result);
@@ -499,8 +407,8 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
                 "}";
 
             var memoryStream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(json));
-            sut = new UserService(_loggerMock.Object, _userRepository.Object, _repoAddressService.Object);
-            var result = Assert.ThrowsAsync<UserFunctionException>(() => sut.GetUserRequestModel(memoryStream));
+            sut = new UserService(_userRepository!.Object, _repoAddressService!.Object);
+            Assert.ThrowsAsync<UserFunctionException>(() => sut.GetUserRequestModel(memoryStream));
         }
 
         [Test]
@@ -511,8 +419,8 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
                 "}";
 
             var memoryStream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(json));
-            sut = new UserService(_loggerMock.Object, _userRepository.Object, _repoAddressService.Object);
-            var result = Assert.ThrowsAsync<UserFunctionException>(() => sut.GetUserModel(memoryStream));
+            sut = new UserService(_userRepository!.Object, _repoAddressService!.Object);
+            Assert.ThrowsAsync<UserFunctionException>(() => sut.GetUserModel(memoryStream));
         }
     }
 }

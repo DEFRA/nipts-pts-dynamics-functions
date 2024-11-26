@@ -1,4 +1,4 @@
-﻿using model = Defra.PTS.Common.Models;
+﻿using Model = Defra.PTS.Common.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,8 +9,8 @@ namespace Defra.PTS.Common.ApiServices.Interface
 {
     public interface IOwnerService
     {
-        Task<model.Owner> GetOwnerModel(Stream userStream);
+        Task<Model.Owner> GetOwnerModel(Stream ownerStream);
         Task<bool> DoesOwnerExists(string ownerEmail);
-        Task<Guid> CreateOwner(model.Owner ownerModel);
+        Task<Guid> CreateOwner(Model.Owner ownerModel);
     }
 }

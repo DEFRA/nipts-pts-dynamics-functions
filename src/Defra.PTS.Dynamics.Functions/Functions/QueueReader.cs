@@ -56,81 +56,70 @@ namespace Defra.PTS.Dynamics.Functions.Functions
               [ServiceBusTrigger("%AzureServiceBusOptions:SubmitQueueName%", Connection = ServiceBusConnection)] string myQueueItem
             , ILogger log)
         {
-            try
+            if (string.IsNullOrEmpty(myQueueItem))
             {
-                if (string.IsNullOrEmpty(myQueueItem))
+                throw new QueueReaderException("Invalid Queue Message :" + myQueueItem);
+            }
+
+            ApplicationSubmittedMessageQueueModel currentApplication = JsonConvert.DeserializeObject<ApplicationSubmittedMessageQueueModel>(myQueueItem);
+            if (currentApplication == null ||
+                currentApplication.ApplicationId == Guid.Empty)
+            {
+                throw new QueueReaderException("Invalid Object from message :" + myQueueItem);
+            }
+
+            Guid applicationId = currentApplication.ApplicationId;
+            
+            string apiVersion = _dynamicOptions.Value.ApiVersion;
+            string serviceUrl = await _keyVaultAccess.GetSecretAsync("Pts-Dynamics-Tenant-ServiceUrl");
+            string apiUrl = $"{serviceUrl}/api/data/v{apiVersion}/nipts_ptdapplications";
+
+            string accessToken = await _dynamicsService.GetTokenForClient(new[] { $"{serviceUrl}/.default" });
+
+            _httpClient.DefaultRequestHeaders.Clear();
+            _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+            var applicationObject = await _applicationService.GetApplication(applicationId);
+            if (applicationObject == null)
+            {
+                throw new QueueReaderException("Invalid Data Object so cannot Post to Dynamics");
+            }
+
+            string jsonData = JsonConvert.SerializeObject(applicationObject);
+            log.LogInformation("Request Headers for application: {0} {1} Posting Json Payload: {2}", applicationId.ToString(), _httpClient.DefaultRequestHeaders.ToString(), jsonData);
+            StringContent content = new StringContent(jsonData, Encoding.UTF8, "application/json");
+            HttpResponseMessage response = await _httpClient.PostAsync(apiUrl, content);
+            log.LogInformation("POST Response for application: ", applicationId.ToString(), response);
+            if (response.IsSuccessStatusCode)
+            {
+                // Read and print the response content
+                log.LogInformation("POST request successful for ", applicationId.ToString());
+            }
+            else
+            {
+                log.LogError("Error: {StatusCode} - {ReasonPhrase}", response.StatusCode, response.ReasonPhrase);
+                if (response.Content == null || response.Content.Headers.ContentLength == 0)
                 {
-                    throw new QueueReaderException("Invalid Queue Message :" + myQueueItem);
+                    throw new QueueReaderException($"Error Response Content is Null for {applicationId}");
                 }
 
-                ApplicationSubmittedMessageQueueModel currentApplication = JsonConvert.DeserializeObject<ApplicationSubmittedMessageQueueModel>(myQueueItem);
-                if (currentApplication == null ||
-                    currentApplication.ApplicationId == Guid.Empty)
+
+                // Log Error message from dynamics and Throw exception with details returned from Dynamics
+                var responseContent = await response.Content.ReadAsStringAsync();
+                log.LogInformation("Error Response content for application: ", applicationId.ToString(), responseContent);
+                bool isValidJson = JsonHelper.IsValidJson(responseContent);
+                if (isValidJson)
                 {
-                    throw new QueueReaderException("Invalid Object from message :" + myQueueItem);
-                }
-
-                Guid applicationId = currentApplication.ApplicationId;
-                log.LogInformation("Processing ApplicationId: ", applicationId.ToString());
-                string apiVersion = _dynamicOptions.Value.ApiVersion;
-                string serviceUrl = await _keyVaultAccess.GetSecretAsync("Pts-Dynamics-Tenant-ServiceUrl");
-                string apiUrl = $"{serviceUrl}/api/data/v{apiVersion}/nipts_ptdapplications";
-
-                string accessToken = await _dynamicsService.GetTokenForClient(new[] { $"{serviceUrl}/.default" });
-
-                _httpClient.DefaultRequestHeaders.Clear();
-                _httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-
-                log.LogInformation("Request Headers for application: ", applicationId.ToString(), _httpClient.DefaultRequestHeaders.ToString()); 
-
-               var applicationObject = await _applicationService.GetApplication(applicationId);
-                if(applicationObject == null)
-                {
-                    throw new QueueReaderException("Invalid Data Object so cannot Post to Dynamics");
-                }
-
-                string jsonData = JsonConvert.SerializeObject(applicationObject);
-                log.LogInformation("Posting Json Payload: ", jsonData);
-                StringContent content = new StringContent(jsonData, Encoding.UTF8, "application/json");
-                HttpResponseMessage response = await _httpClient.PostAsync(apiUrl, content);
-                log.LogInformation("POST Response for application: ",applicationId.ToString(), response);
-                if (response.IsSuccessStatusCode)
-                {
-                    // Read and print the response content
-                    log.LogInformation("POST request successful for ", applicationId.ToString());
+                    DynamicsResponseDto dynamicsEntryCreationResponse = JsonConvert.DeserializeObject<DynamicsResponseDto>(responseContent);
+                    log.LogError("Dynamics Response Error : {0} - {1} - {2}"
+                        , applicationId, response.ReasonPhrase, dynamicsEntryCreationResponse.Error.Code, dynamicsEntryCreationResponse.Error.Message);
+                    throw new QueueReaderException($"{applicationId} - {response.ReasonPhrase} - {dynamicsEntryCreationResponse.Error.Code} - {dynamicsEntryCreationResponse.Error.Message}");
                 }
                 else
                 {
-                    log.LogError("Error: {StatusCode} - {ReasonPhrase}", response.StatusCode, response.ReasonPhrase);
-                    if (response.Content == null || response.Content.Headers.ContentLength == 0)
-                    {
-                        throw new QueueReaderException($"Error Response Content is Null for {applicationId}");
-                    }
-
-
-                    // Log Error message from dynamics and Throw exception with details returned from Dynamics
-                    var responseContent = await response.Content.ReadAsStringAsync();
-                    log.LogInformation("Error Response content for application: ", applicationId.ToString(), responseContent);
-                    bool isValidJson = JsonHelper.IsValidJson(responseContent);
-                    if (isValidJson)
-                    {
-                        DynamicsResponseDto dynamicsEntryCreationResponse = JsonConvert.DeserializeObject<DynamicsResponseDto>(responseContent);
-                        log.LogError("Dynamics Response Error : {applicationId} - {Error_Code} - {Error_Message}"
-                            ,applicationId, response.ReasonPhrase, dynamicsEntryCreationResponse.Error.Code, dynamicsEntryCreationResponse.Error.Message);
-                        throw new QueueReaderException($"{applicationId} - {response.ReasonPhrase} - {dynamicsEntryCreationResponse.Error.Code} - {dynamicsEntryCreationResponse.Error.Message}");
-                    }
-                    else
-                    {
-                        throw new QueueReaderException($"{applicationId} - {response.ReasonPhrase} - {responseContent}");
-                    }                   
+                    throw new QueueReaderException($"{applicationId} - {response.ReasonPhrase} - {responseContent}");
                 }
-            }
-            catch (Exception ex)
-            {
-                log.LogError(ex, "Error Stack: ", ex.StackTrace);
-                log.LogError(ex, "Exception Message: ", ex.Message);
-                throw;
             }
         }
 
@@ -139,8 +128,6 @@ namespace Defra.PTS.Dynamics.Functions.Functions
               [ServiceBusTrigger("%AzureServiceBusOptions:UpdateQueueName%", Connection = ServiceBusConnection)] string myQueueItem
             , ILogger log)
         {
-            try
-            {
                 if (string.IsNullOrEmpty(myQueueItem))
                 {
                     log.LogError("Invalid Queue Message :", myQueueItem);
@@ -150,17 +137,10 @@ namespace Defra.PTS.Dynamics.Functions.Functions
                 if (currentApplication == null ||
                    currentApplication.Id == Guid.Empty)
                 {
-                    log.LogError("Invalid Object from message :" + myQueueItem);
+                    log.LogError("Invalid Object from message : {0}", myQueueItem);
                     throw new QueueReaderException("Invalid Object from message :" + myQueueItem);                    
                 }                
                 await _applicationService.UpdateApplicationStatus(currentApplication);
-            }
-            catch (Exception ex)
-            {
-                log.LogError("Error Stack: ", ex.StackTrace);
-                log.LogError("Exception Message: ", ex.Message);
-                throw;
-            }
         }
     }
 }

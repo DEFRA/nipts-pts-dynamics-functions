@@ -1,9 +1,9 @@
-﻿using entity = Defra.PTS.Common.Entities;
+﻿using Entity = Defra.PTS.Common.Entities;
 
 namespace Defra.PTS.Common.Repositories.Interface
 {
-    public interface ITravelDocumentRepository :  IRepository<entity.TravelDocument>
+    public interface ITravelDocumentRepository :  IRepository<Entity.TravelDocument>
     {
-        Task<entity.TravelDocument> GetTravelDocument(Guid? applicationId, Guid? ownerId, Guid? petId);
+        Task<Entity.TravelDocument?> GetTravelDocument(Guid? applicationId, Guid? ownerId, Guid? petId);
     }
 }
