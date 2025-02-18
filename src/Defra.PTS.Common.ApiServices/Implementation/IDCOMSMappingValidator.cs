@@ -7,14 +7,14 @@ using System.Text.RegularExpressions;
 
 namespace Defra.PTS.Common.ApiServices.Implementation
 {
-    public class IDCOMSMappingValidator : IIDCOMSMappingValidator
+    public class IdcomsMappingValidator : IIdcomsMappingValidator
     {
-        private readonly ILogger<IDCOMSMappingValidator> _logger;
+        private readonly ILogger<IdcomsMappingValidator> _logger;
         private readonly IBreedRepository _breedRepository;
         private readonly IColourRepository _colourRepository;
 
-        public IDCOMSMappingValidator(
-            ILogger<IDCOMSMappingValidator> logger,
+        public IdcomsMappingValidator(
+            ILogger<IdcomsMappingValidator> logger,
             IBreedRepository breedRepository,
             IColourRepository colourRepository)
         {
@@ -327,35 +327,35 @@ namespace Defra.PTS.Common.ApiServices.Implementation
 
         private static void ValidateTravelDocumentFields(OfflineApplicationQueueModel model, ValidationResult result)
         {
-            if (model.PTD == null)
+            if (model.Ptd == null)
             {
                 result.AddError("PTD", "Travel document information is required");
                 return;
             }
 
-            if (string.IsNullOrEmpty(model.PTD.DocumentReferenceNumber))
+            if (string.IsNullOrEmpty(model.Ptd.DocumentReferenceNumber))
             {
                 result.AddError("DocumentReferenceNumber", "Document reference number is required");
             }
             else
             {
-                if (model.PTD.DocumentReferenceNumber.Length > 20)
+                if (model.Ptd.DocumentReferenceNumber.Length > 20)
                 {
                     result.AddError("DocumentReferenceNumber", "Document reference number cannot exceed 20 characters");
                 }
-                if (model.PTD.DocumentReferenceNumber != model.Application.ReferenceNumber)
+                if (model.Ptd.DocumentReferenceNumber != model.Application.ReferenceNumber)
                 {
                     result.AddError("DocumentReferenceNumber", "Document reference number must match application reference number");
                 }
             }
 
-            if (model.PTD.ValidityEndDate.HasValue && model.PTD.ValidityStartDate.HasValue &&
-                model.PTD.ValidityEndDate.Value < model.PTD.ValidityStartDate.Value)
+            if (model.Ptd.ValidityEndDate.HasValue && model.Ptd.ValidityStartDate.HasValue &&
+                model.Ptd.ValidityEndDate.Value < model.Ptd.ValidityStartDate.Value)
             {
                 result.AddError("ValidityEndDate", "Validity end date cannot be before start date");
             }
 
-            if (model.PTD.IssuingAuthorityId.HasValue && model.PTD.IssuingAuthorityId.Value <= 0)
+            if (model.Ptd.IssuingAuthorityId.HasValue && model.Ptd.IssuingAuthorityId.Value <= 0)
             {
                 result.AddError("IssuingAuthorityId", "Issuing authority ID must be a positive number");
             }

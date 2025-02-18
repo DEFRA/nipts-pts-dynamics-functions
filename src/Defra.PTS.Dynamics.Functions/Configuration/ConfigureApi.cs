@@ -23,7 +23,7 @@ namespace Defra.PTS.Dynamics.Functions.Configuration
             services.AddScoped<IApplicationService, ApplicationService>();
             services.AddScoped<IServiceBusService, ServiceBusService>();
             services.AddScoped<IOfflineApplicationService, OfflineApplicationService>();
-            services.AddScoped<IIDCOMSMappingValidator, IDCOMSMappingValidator>();
+            services.AddScoped<IIdcomsMappingValidator, IdcomsMappingValidator>();
             return services;
         }
     }

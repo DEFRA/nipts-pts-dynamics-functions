@@ -29,6 +29,8 @@ namespace Defra.PTS.Dynamics.Functions.Functions
         {
             try
             {
+                _logger.LogInformation("Starting to process offline application message: {Message}",
+              queueMessage);
                 _logger.LogInformation($"Starting to process offline application message: {queueMessage}");
 
                 if (string.IsNullOrEmpty(queueMessage))
@@ -47,17 +49,18 @@ namespace Defra.PTS.Dynamics.Functions.Functions
                 try
                 {
                     await _offlineApplicationService.ProcessOfflineApplication(offlineApplication);
-                    _logger.LogInformation($"Successfully processed offline application for reference: {offlineApplication.Application.ReferenceNumber}");
+                    _logger.LogInformation("Successfully processed offline application for reference: {Reference}",
+                offlineApplication.Application.ReferenceNumber);
                 }
                 catch (OfflineApplicationProcessingException ex) when (ex.Message.Contains("Validation failed"))
                 {
-                    _logger.LogWarning($"Validation failure: {ex.Message}");
+                    _logger.LogWarning(ex, "Validation failure for message {Message}", ex.Message);
                     throw; // This will cause the message to be moved to dead letter queue
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error processing offline application: {Message}", ex.Message);
+                _logger.LogError(ex, "Error processing offline application", ex);
                 throw; // Retries will be handled by the Service Bus retry policy
             }
         }

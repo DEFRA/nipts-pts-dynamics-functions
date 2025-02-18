@@ -11,7 +11,7 @@ namespace Defra.PTS.Common.Models
         public ApplicantInfo Applicant { get; set; } = new();  
         public PetInfo Pet { get; set; } = new();
         public ApplicationInfo Application { get; set; } = new();
-        public PTDInfo PTD { get; set; } = new();
+        public PtdInfo Ptd { get; set; } = new();
         public Guid CreatedBy { get; set; }
     }
 
@@ -72,7 +72,7 @@ namespace Defra.PTS.Common.Models
     }
 
     [ExcludeFromCodeCoverage]
-    public class PTDInfo
+    public class PtdInfo
     {
         public string DocumentReferenceNumber { get; set; } = string.Empty; 
         public bool? IsLifeTime { get; set; }

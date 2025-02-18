@@ -17,7 +17,7 @@ namespace Defra.PTS.Common.ApiServices.Implementation
         IPetRepository petRepository,
         IUserRepository userRepository,
         ITravelDocumentRepository travelDocumentRepository,
-        IIDCOMSMappingValidator mappingValidator,
+        IdcomsMappingValidator mappingValidator,
         IBreedRepository breedRepository,
         ILogger<OfflineApplicationService> logger) : IOfflineApplicationService
     {
@@ -27,7 +27,7 @@ namespace Defra.PTS.Common.ApiServices.Implementation
         private readonly IPetRepository _petRepository = petRepository;
         private readonly IUserRepository _userRepository = userRepository;
         private readonly ITravelDocumentRepository _travelDocumentRepository = travelDocumentRepository;
-        private readonly IIDCOMSMappingValidator _mappingValidator = mappingValidator;
+        private readonly IdcomsMappingValidator _mappingValidator = mappingValidator;
         private readonly IBreedRepository _breedRepository = breedRepository;
         private readonly ILogger<OfflineApplicationService> _logger = logger;
 
@@ -220,7 +220,7 @@ namespace Defra.PTS.Common.ApiServices.Implementation
                 ApplicationId = application.Id,
                 OwnerId = owner.Id,
                 PetId = pet.Id,
-                DocumentReferenceNumber = TruncateString(queueModel.PTD.DocumentReferenceNumber, 20),
+                DocumentReferenceNumber = TruncateString(queueModel.Ptd.DocumentReferenceNumber, 20),
                 QRCode = null,
                 IsLifeTIme = true,
                 ValidityStartDate = null,
