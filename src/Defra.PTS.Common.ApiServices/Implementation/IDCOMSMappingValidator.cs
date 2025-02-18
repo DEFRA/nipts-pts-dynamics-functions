@@ -114,7 +114,9 @@ namespace Defra.PTS.Common.ApiServices.Implementation
 
             try
             {
-                var colour = await _colourRepository.FindById(model.Pet.ColourId).WaitAsync(cts.Token);
+                var colour = await _colourRepository.FindById(model.Pet.ColourId)
+                    .WaitAsync(TimeSpan.FromSeconds(TimeoutDuration), cts.Token);
+
                 if (colour == null)
                 {
                     result.AddError("PetColourId", $"Invalid colour id: {model.Pet.ColourId}");
@@ -448,48 +450,69 @@ namespace Defra.PTS.Common.ApiServices.Implementation
                 return;
             }
 
-            if (string.IsNullOrEmpty(address.AddressLineOne))
+            ValidateAddressLineOne(address.AddressLineOne, addressType, result);
+            ValidateAddressLineTwo(address.AddressLineTwo, addressType, result);
+            ValidateTownOrCity(address.TownOrCity, addressType, result);
+            ValidateCounty(address.County, addressType, result);
+            ValidatePostCode(address.PostCode, addressType, result);
+        }
+
+        private static void ValidateAddressLineOne(string addressLine, string addressType, ValidationResult result)
+        {
+            if (string.IsNullOrEmpty(addressLine))
             {
                 result.AddError($"{addressType}AddressLineOne", $"{addressType} address line 1 is required");
             }
-            else if (address.AddressLineOne.Length > 250)
+            else if (addressLine.Length > 250)
             {
                 result.AddError($"{addressType}AddressLineOne", $"{addressType} address line 1 cannot exceed 250 characters");
             }
+        }
 
-            if (!string.IsNullOrEmpty(address.AddressLineTwo) && address.AddressLineTwo.Length > 250)
+        private static void ValidateAddressLineTwo(string addressLine, string addressType, ValidationResult result)
+        {
+            if (!string.IsNullOrEmpty(addressLine) && addressLine.Length > 250)
             {
                 result.AddError($"{addressType}AddressLineTwo", $"{addressType} address line 2 cannot exceed 250 characters");
             }
+        }
 
-            if (string.IsNullOrEmpty(address.TownOrCity))
+        private static void ValidateTownOrCity(string townOrCity, string addressType, ValidationResult result)
+        {
+            if (string.IsNullOrEmpty(townOrCity))
             {
                 result.AddError($"{addressType}TownOrCity", $"{addressType} town/city is required");
             }
-            else if (address.TownOrCity.Length > 250)
+            else if (townOrCity.Length > 250)
             {
                 result.AddError($"{addressType}TownOrCity", $"{addressType} town/city cannot exceed 250 characters");
             }
+        }
 
-            if (!string.IsNullOrEmpty(address.County) && address.County.Length > 100)
+        private static void ValidateCounty(string county, string addressType, ValidationResult result)
+        {
+            if (!string.IsNullOrEmpty(county) && county.Length > 100)
             {
                 result.AddError($"{addressType}County", $"{addressType} county cannot exceed 100 characters");
             }
+        }
 
-            if (string.IsNullOrEmpty(address.PostCode))
+        private static void ValidatePostCode(string postCode, string addressType, ValidationResult result)
+        {
+            if (string.IsNullOrEmpty(postCode))
             {
                 result.AddError($"{addressType}PostCode", $"{addressType} postcode is required");
+                return;
             }
-            else
+
+            if (postCode.Length > 20)
             {
-                if (address.PostCode.Length > 20)
-                {
-                    result.AddError($"{addressType}PostCode", $"{addressType} postcode cannot exceed 20 characters");
-                }
-                if (!IsValidPostcode(address.PostCode))
-                {
-                    result.AddError($"{addressType}PostCode", $"Invalid {addressType.ToLower()} postcode format");
-                }
+                result.AddError($"{addressType}PostCode", $"{addressType} postcode cannot exceed 20 characters");
+            }
+
+            if (!IsValidPostcode(postCode))
+            {
+                result.AddError($"{addressType}PostCode", $"Invalid {addressType.ToLower()} postcode format");
             }
         }
 
