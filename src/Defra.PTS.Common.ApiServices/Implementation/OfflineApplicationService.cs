@@ -46,7 +46,6 @@ namespace Defra.PTS.Common.ApiServices.Implementation
                 _options.Logger.LogInformation(ProcessingStartMessage, queueModel.Application.ReferenceNumber);
 
                 var ownerAddress = await ProcessAddress(queueModel.OwnerAddress, "Owner");
-
                 Entity.Address? applicantAddress = null;
                 if (queueModel.ApplicantAddress != null)
                 {
@@ -63,7 +62,7 @@ namespace Defra.PTS.Common.ApiServices.Implementation
                 var owner = await ProcessOwner(queueModel, ownerAddress);
                 var pet = await ProcessPet(queueModel);
                 var application = await ProcessApplication(queueModel, pet, owner, user, ownerAddress);
-                var travelDocument = await ProcessTravelDocument(queueModel, application, owner, pet);
+                await ProcessTravelDocument(queueModel, application, owner, pet);
 
                 scope.Complete();
                 _options.Logger.LogInformation(ProcessingCompleteMessage, queueModel.Application.ReferenceNumber);
@@ -190,7 +189,7 @@ namespace Defra.PTS.Common.ApiServices.Implementation
             return application;
         }
 
-        private async Task<Entity.TravelDocument> ProcessTravelDocument(
+        private async Task ProcessTravelDocument(
             OfflineApplicationQueueModel queueModel,
             Entity.Application application,
             Entity.Owner owner,
@@ -219,7 +218,6 @@ namespace Defra.PTS.Common.ApiServices.Implementation
 
             await _options.TravelDocumentRepository.Add(travelDocument);
             await _options.TravelDocumentRepository.SaveChanges();
-            return travelDocument;
         }
 
         private async Task<Entity.Pet> ProcessPet(OfflineApplicationQueueModel queueModel)
