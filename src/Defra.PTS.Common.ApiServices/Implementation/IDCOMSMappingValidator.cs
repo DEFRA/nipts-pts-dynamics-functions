@@ -62,32 +62,36 @@ namespace Defra.PTS.Common.ApiServices.Implementation
             try
             {
                 // Run synchronous validations first
-                ValidateOwnerFields(model, result);
-                ValidateApplicantFields(model, result);
+                await ValidateFieldsWithTimeout(async () =>
+                {
+                    ValidateOwnerFields(model, result);
+                    ValidateApplicantFields(model, result);
+                }, cts.Token);
 
                 // Run asynchronous validations with timeout
-                var tasks = new List<Task>
-        {
-            ValidatePetBreedInfo(model, result, cts.Token),
-            ValidatePetColourInfo(model, result, cts.Token)
-        };
+                var breedValidation = ValidatePetBreedInfo(model, result, cts.Token);
+                var colorValidation = ValidatePetColourInfo(model, result, cts.Token);
 
-                await Task.WhenAll(tasks).WaitAsync(TimeSpan.FromSeconds(TimeoutDuration), cts.Token);
+                await Task.WhenAll(breedValidation, colorValidation)
+                    .WaitAsync(TimeSpan.FromSeconds(TimeoutDuration), cts.Token);
 
                 // Continue with synchronous validations
-                ValidatePetBasicInfo(model, result);
-                ValidateAddressFields(model.OwnerAddress, "Owner", result);
-
-                if (model.ApplicantAddress != null)
+                await ValidateFieldsWithTimeout(async () =>
                 {
-                    ValidateAddressFields(model.ApplicantAddress, "Applicant", result);
-                }
+                    ValidatePetBasicInfo(model, result);
+                    ValidateAddressFields(model.OwnerAddress, "Owner", result);
 
-                ValidateBasicApplicationFields(model, result);
-                ValidateApplicationDates(model, result);
-                ValidateIDCOMSFormat(model, result);
+                    if (model.ApplicantAddress != null)
+                    {
+                        ValidateAddressFields(model.ApplicantAddress, "Applicant", result);
+                    }
 
-                // Run final async validation
+                    ValidateBasicApplicationFields(model, result);
+                    ValidateApplicationDates(model, result);
+                    ValidateIDCOMSFormat(model, result);
+                }, cts.Token);
+
+                // Run final async validation with timeout
                 await ValidateTravelDocumentFields(model, result, cts.Token)
                     .WaitAsync(TimeSpan.FromSeconds(TimeoutDuration), cts.Token);
             }
@@ -95,6 +99,12 @@ namespace Defra.PTS.Common.ApiServices.Implementation
             {
                 throw new OperationCanceledException("Validation operation timed out");
             }
+        }
+
+        private static async Task ValidateFieldsWithTimeout(Func<Task> validation, CancellationToken cancellationToken)
+        {
+            await Task.Run(validation, cancellationToken)
+                .WaitAsync(TimeSpan.FromSeconds(TimeoutDuration), cancellationToken);
         }
 
         private async Task ValidatePetBreedInfo(OfflineApplicationQueueModel model, ValidationResult result, CancellationToken cancellationToken)
@@ -107,13 +117,14 @@ namespace Defra.PTS.Common.ApiServices.Implementation
 
             if (model.Pet.BreedId != 99 && model.Pet.BreedId != 100)
             {
-                var breedTask = _breedRepository.FindById(model.Pet.BreedId);
                 using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
                 cts.CancelAfter(TimeSpan.FromSeconds(TimeoutDuration));
 
                 try
                 {
+                    var breedTask = _breedRepository.FindById(model.Pet.BreedId);
                     var breed = await breedTask.WaitAsync(TimeSpan.FromSeconds(TimeoutDuration), cts.Token);
+
                     if (breed == null)
                     {
                         result.AddError("PetBreedId", $"Invalid breed id: {model.Pet.BreedId}");
@@ -145,7 +156,7 @@ namespace Defra.PTS.Common.ApiServices.Implementation
                     result.AddError("PetColourId", $"Invalid colour id: {model.Pet.ColourId}");
                 }
                 else if ((model.Pet.ColourId == 11 || model.Pet.ColourId == 20 || model.Pet.ColourId == 29)
-                         && string.IsNullOrEmpty(model.Pet.OtherColour))
+                        && string.IsNullOrEmpty(model.Pet.OtherColour))
                 {
                     result.AddError("OtherColour", "Other colour description is required for this colour selection");
                 }
@@ -285,9 +296,13 @@ namespace Defra.PTS.Common.ApiServices.Implementation
 
         private static async Task ValidateTravelDocumentFields(OfflineApplicationQueueModel model, ValidationResult result, CancellationToken cancellationToken)
         {
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            cts.CancelAfter(TimeSpan.FromSeconds(TimeoutDuration));
+
             try
             {
-                await Task.Run(() => ValidateTravelDocumentBasicFields(model, result), cancellationToken);
+                await Task.Run(() => ValidateTravelDocumentBasicFields(model, result))
+                    .WaitAsync(TimeSpan.FromSeconds(TimeoutDuration), cts.Token);
             }
             catch (OperationCanceledException)
             {
