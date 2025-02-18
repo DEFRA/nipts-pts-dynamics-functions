@@ -9,6 +9,8 @@ namespace Defra.PTS.Common.ApiServices.Implementation
 {
     public class IdcomsMappingValidator : IIdcomsMappingValidator
     {
+        private const string ReferenceNumberField = "ReferenceNumber";
+        private const int TimeoutDuration = 30;
         private readonly ILogger<IdcomsMappingValidator> _logger;
         private readonly IBreedRepository _breedRepository;
         private readonly IColourRepository _colourRepository;
@@ -26,6 +28,7 @@ namespace Defra.PTS.Common.ApiServices.Implementation
         public async Task<ValidationResult> ValidateMapping(OfflineApplicationQueueModel queueModel)
         {
             var result = new ValidationResult();
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(TimeoutDuration));
 
             if (queueModel == null)
             {
@@ -37,7 +40,7 @@ namespace Defra.PTS.Common.ApiServices.Implementation
             {
                 ValidateOwnerFields(queueModel, result);
                 ValidateApplicantFields(queueModel, result);
-                await ValidatePetFields(queueModel, result);
+                await ValidatePetFields(queueModel, result, cts.Token);
                 ValidateAddressFields(queueModel.OwnerAddress, "Owner", result);
                 if (queueModel.ApplicantAddress != null)
                 {
@@ -45,7 +48,12 @@ namespace Defra.PTS.Common.ApiServices.Implementation
                 }
                 ValidateApplicationFields(queueModel, result);
                 ValidateIDCOMSFormat(queueModel, result);
-                ValidateTravelDocumentFields(queueModel, result);
+                await ValidateTravelDocumentFields(queueModel, result, cts.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                result.AddError("Timeout", "Validation operation timed out");
+                _logger.LogWarning("Validation timed out after {Seconds} seconds", TimeoutDuration);
             }
             catch (Exception ex)
             {
@@ -199,7 +207,7 @@ namespace Defra.PTS.Common.ApiServices.Implementation
             }
         }
 
-        private async Task ValidatePetFields(OfflineApplicationQueueModel model, ValidationResult result)
+        private async Task ValidatePetFields(OfflineApplicationQueueModel model, ValidationResult result, CancellationToken cancellationToken)
         {
             if (!Enum.IsDefined(typeof(PetSpeciesType), model.Pet.SpeciesId))
             {
@@ -213,7 +221,16 @@ namespace Defra.PTS.Common.ApiServices.Implementation
 
             if (model.Pet.BreedId != 99 && model.Pet.BreedId != 100)
             {
-                var breed = await _breedRepository.FindById(model.Pet.BreedId);
+                var breedTask = _breedRepository.FindById(model.Pet.BreedId);
+                var timeoutTask = Task.Delay(TimeSpan.FromSeconds(TimeoutDuration), cancellationToken);
+
+                var completedTask = await Task.WhenAny(breedTask, timeoutTask);
+                if (completedTask == timeoutTask)
+                {
+                    throw new OperationCanceledException("Breed validation timed out");
+                }
+
+                var breed = await breedTask;
                 if (breed == null)
                 {
                     result.AddError("PetBreedId", $"Invalid breed id: {model.Pet.BreedId}");
@@ -224,7 +241,16 @@ namespace Defra.PTS.Common.ApiServices.Implementation
                 }
             }
 
-            var colour = await _colourRepository.FindById(model.Pet.ColourId);
+            var colourTask = _colourRepository.FindById(model.Pet.ColourId);
+            var colourTimeoutTask = Task.Delay(TimeSpan.FromSeconds(TimeoutDuration), cancellationToken);
+
+            var colourCompletedTask = await Task.WhenAny(colourTask, colourTimeoutTask);
+            if (colourCompletedTask == colourTimeoutTask)
+            {
+                throw new OperationCanceledException("Colour validation timed out");
+            }
+
+            var colour = await colourTask;
             if (colour == null)
             {
                 result.AddError("PetColourId", $"Invalid colour id: {model.Pet.ColourId}");
@@ -234,6 +260,7 @@ namespace Defra.PTS.Common.ApiServices.Implementation
             {
                 result.AddError("OtherColour", "Other colour description is required for this colour selection");
             }
+
 
             if (string.IsNullOrEmpty(model.Pet.Name))
             {
@@ -293,17 +320,17 @@ namespace Defra.PTS.Common.ApiServices.Implementation
 
             if (string.IsNullOrEmpty(model.Application.ReferenceNumber))
             {
-                result.AddError("ReferenceNumber", "Reference number is required");
+                result.AddError(ReferenceNumberField, "Reference number is required");
             }
             else
             {
                 if (model.Application.ReferenceNumber.Length > 20)
                 {
-                    result.AddError("ReferenceNumber", "Reference number cannot exceed 20 characters");
+                    result.AddError(ReferenceNumberField, "Reference number cannot exceed 20 characters");
                 }
                 if (!IsValidReferenceNumber(model.Application.ReferenceNumber))
                 {
-                    result.AddError("ReferenceNumber", "Invalid reference number format");
+                    result.AddError(ReferenceNumberField, "Invalid reference number format");
                 }
             }
 
@@ -325,40 +352,43 @@ namespace Defra.PTS.Common.ApiServices.Implementation
             }
         }
 
-        private static void ValidateTravelDocumentFields(OfflineApplicationQueueModel model, ValidationResult result)
+        private async Task ValidateTravelDocumentFields(OfflineApplicationQueueModel model, ValidationResult result, CancellationToken cancellationToken)
         {
-            if (model.Ptd == null)
+            await Task.Run(() =>
             {
-                result.AddError("PTD", "Travel document information is required");
-                return;
-            }
-
-            if (string.IsNullOrEmpty(model.Ptd.DocumentReferenceNumber))
-            {
-                result.AddError("DocumentReferenceNumber", "Document reference number is required");
-            }
-            else
-            {
-                if (model.Ptd.DocumentReferenceNumber.Length > 20)
+                if (model.Ptd == null)
                 {
-                    result.AddError("DocumentReferenceNumber", "Document reference number cannot exceed 20 characters");
+                    result.AddError(ReferenceNumberField, "Travel document information is required");
+                    return;
                 }
-                if (model.Ptd.DocumentReferenceNumber != model.Application.ReferenceNumber)
+
+                if (string.IsNullOrEmpty(model.Ptd.DocumentReferenceNumber))
                 {
-                    result.AddError("DocumentReferenceNumber", "Document reference number must match application reference number");
+                    result.AddError(ReferenceNumberField, "Document reference number is required");
                 }
-            }
+                else
+                {
+                    if (model.Ptd.DocumentReferenceNumber.Length > 20)
+                    {
+                        result.AddError(ReferenceNumberField, "Document reference number cannot exceed 20 characters");
+                    }
+                    if (model.Ptd.DocumentReferenceNumber != model.Application.ReferenceNumber)
+                    {
+                        result.AddError(ReferenceNumberField, "Document reference number must match application reference number");
+                    }
+                }
 
-            if (model.Ptd.ValidityEndDate.HasValue && model.Ptd.ValidityStartDate.HasValue &&
-                model.Ptd.ValidityEndDate.Value < model.Ptd.ValidityStartDate.Value)
-            {
-                result.AddError("ValidityEndDate", "Validity end date cannot be before start date");
-            }
+                if (model.Ptd.ValidityEndDate.HasValue && model.Ptd.ValidityStartDate.HasValue &&
+                    model.Ptd.ValidityEndDate.Value < model.Ptd.ValidityStartDate.Value)
+                {
+                    result.AddError("ValidityEndDate", "Validity end date cannot be before start date");
+                }
 
-            if (model.Ptd.IssuingAuthorityId.HasValue && model.Ptd.IssuingAuthorityId.Value <= 0)
-            {
-                result.AddError("IssuingAuthorityId", "Issuing authority ID must be a positive number");
-            }
+                if (model.Ptd.IssuingAuthorityId.HasValue && model.Ptd.IssuingAuthorityId.Value <= 0)
+                {
+                    result.AddError("IssuingAuthorityId", "Issuing authority ID must be a positive number");
+                }
+            }, cancellationToken);
         }
 
         private static void ValidateIDCOMSFormat(OfflineApplicationQueueModel model, ValidationResult result)
@@ -367,7 +397,7 @@ namespace Defra.PTS.Common.ApiServices.Implementation
                   model.Application.ReferenceNumber.StartsWith("AD", StringComparison.OrdinalIgnoreCase)) ||
                 !Regex.IsMatch(model.Application.ReferenceNumber, @"^(GB|AD)\d{8}$"))
             {
-                result.AddError("ReferenceNumber", "Reference must start with 'GB' or 'AD' followed by 8 digits");
+                result.AddError(ReferenceNumberField, "Reference must start with 'GB' or 'AD' followed by 8 digits");
             }
 
             if (!string.IsNullOrWhiteSpace(model.Owner.FullName) &&

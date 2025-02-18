@@ -10,34 +10,32 @@ using Entity = Defra.PTS.Common.Entities;
 
 namespace Defra.PTS.Common.ApiServices.Implementation
 {
-    public class OfflineApplicationService(
-        IApplicationRepository applicationRepository,
-        IOwnerRepository ownerRepository,
-        IAddressRepository addressRepository,
-        IPetRepository petRepository,
-        IUserRepository userRepository,
-        ITravelDocumentRepository travelDocumentRepository,
-        IdcomsMappingValidator mappingValidator,
-        IBreedRepository breedRepository,
-        ILogger<OfflineApplicationService> logger) : IOfflineApplicationService
+    public class OfflineApplicationServiceOptions
     {
-        private readonly IApplicationRepository _applicationRepository = applicationRepository;
-        private readonly IOwnerRepository _ownerRepository = ownerRepository;
-        private readonly IAddressRepository _addressRepository = addressRepository;
-        private readonly IPetRepository _petRepository = petRepository;
-        private readonly IUserRepository _userRepository = userRepository;
-        private readonly ITravelDocumentRepository _travelDocumentRepository = travelDocumentRepository;
-        private readonly IdcomsMappingValidator _mappingValidator = mappingValidator;
-        private readonly IBreedRepository _breedRepository = breedRepository;
-        private readonly ILogger<OfflineApplicationService> _logger = logger;
+        public required IApplicationRepository ApplicationRepository { get; set; }
+        public required IOwnerRepository OwnerRepository { get; set; }
+        public required IAddressRepository AddressRepository { get; set; }
+        public required IPetRepository PetRepository { get; set; }
+        public required IUserRepository UserRepository { get; set; }
+        public required ITravelDocumentRepository TravelDocumentRepository { get; set; }
+        public required IdcomsMappingValidator MappingValidator { get; set; }
+        public required IBreedRepository BreedRepository { get; set; }
+        public required ILogger<OfflineApplicationService> Logger { get; set; }
+    }
+
+    public class OfflineApplicationService(OfflineApplicationServiceOptions options) : IOfflineApplicationService
+    {
+        private readonly OfflineApplicationServiceOptions _options = options;
+        private const string ProcessingStartMessage = "Processing offline application {ReferenceNumber}";
+        private const string ProcessingCompleteMessage = "Completed processing application {ReferenceNumber}";
 
         public async Task ProcessOfflineApplication(OfflineApplicationQueueModel queueModel)
         {
-            var validationResult = await _mappingValidator.ValidateMapping(queueModel);
+            var validationResult = await _options.MappingValidator.ValidateMapping(queueModel);
             if (!validationResult.IsValid)
             {
                 var errors = string.Join(", ", validationResult.Errors.Select(e => $"{e.Field}: {e.Message}"));
-                _logger.LogError("Validation failed for application {ReferenceNumber}. Errors: {Errors}",
+                _options.Logger.LogError("Validation failed for application {ReferenceNumber}. Errors: {Errors}",
                     queueModel.Application.ReferenceNumber, errors);
                 throw new OfflineApplicationProcessingException($"Validation failed: {errors}");
             }
@@ -45,50 +43,34 @@ namespace Defra.PTS.Common.ApiServices.Implementation
             using var scope = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
             try
             {
-                _logger.LogInformation("Starting to process offline application {ReferenceNumber}",
-                    queueModel.Application.ReferenceNumber);
+                _options.Logger.LogInformation(ProcessingStartMessage, queueModel.Application.ReferenceNumber);
 
-                
                 var ownerAddress = await ProcessAddress(queueModel.OwnerAddress, "Owner");
-                _logger.LogInformation("Processed owner address {AddressId}", ownerAddress.Id);
 
-               
                 Entity.Address? applicantAddress = null;
                 if (queueModel.ApplicantAddress != null)
                 {
                     applicantAddress = await ProcessAddress(queueModel.ApplicantAddress, "User");
-                    _logger.LogInformation("Processed applicant address {AddressId}", applicantAddress.Id);
                 }
 
-               
                 var user = await ProcessUser(queueModel);
                 if (applicantAddress != null)
                 {
                     user.AddressId = applicantAddress.Id;
-                    await _userRepository.SaveChanges();
+                    await _options.UserRepository.SaveChanges();
                 }
-                _logger.LogInformation("Processed user {UserId}", user.Id);
 
-                
                 var owner = await ProcessOwner(queueModel, ownerAddress);
-                _logger.LogInformation("Processed owner {OwnerId}", owner.Id);
-
                 var pet = await ProcessPet(queueModel);
-                _logger.LogInformation("Processed pet {PetId}", pet.Id);
-
                 var application = await ProcessApplication(queueModel, pet, owner, user, ownerAddress);
-                _logger.LogInformation("Processed application {ApplicationId}", application.Id);
-
                 var travelDocument = await ProcessTravelDocument(queueModel, application, owner, pet);
-                _logger.LogInformation("Processed travel document {TravelDocumentId}", travelDocument.Id);
 
                 scope.Complete();
-                _logger.LogInformation("Successfully completed processing application {ReferenceNumber}",
-                    queueModel.Application.ReferenceNumber);
+                _options.Logger.LogInformation(ProcessingCompleteMessage, queueModel.Application.ReferenceNumber);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error processing application {ReferenceNumber}",
+                _options.Logger.LogError(ex, "Error processing application {ReferenceNumber}",
                     queueModel.Application.ReferenceNumber);
                 throw new OfflineApplicationProcessingException(
                     $"Failed to process application {queueModel.Application.ReferenceNumber}", ex);
@@ -97,7 +79,7 @@ namespace Defra.PTS.Common.ApiServices.Implementation
 
         private async Task<Entity.User> ProcessUser(OfflineApplicationQueueModel queueModel)
         {
-            var user = await _userRepository.GetUser(queueModel.Applicant.Email);
+            var user = await _options.UserRepository.GetUser(queueModel.Applicant.Email);
             if (user == null)
             {
                 user = new Entity.User
@@ -119,8 +101,8 @@ namespace Defra.PTS.Common.ApiServices.Implementation
                     UpdatedBy = null,
                     UpdatedOn = null
                 };
-                await _userRepository.Add(user);
-                await _userRepository.SaveChanges();
+                await _options.UserRepository.Add(user);
+                await _options.UserRepository.SaveChanges();
             }
             return user;
         }
@@ -144,10 +126,10 @@ namespace Defra.PTS.Common.ApiServices.Implementation
                 UpdatedOn = null
             };
 
-            await _addressRepository.Add(newAddress);
-            await _addressRepository.SaveChanges();
+            await _options.AddressRepository.Add(newAddress);
+            await _options.AddressRepository.SaveChanges();
             return newAddress;
-        }        
+        }
 
         private async Task<Entity.Owner> ProcessOwner(OfflineApplicationQueueModel queueModel, Entity.Address ownerAddress)
         {
@@ -166,8 +148,8 @@ namespace Defra.PTS.Common.ApiServices.Implementation
                 UpdatedOn = null
             };
 
-            await _ownerRepository.Add(owner);
-            await _ownerRepository.SaveChanges();
+            await _options.OwnerRepository.Add(owner);
+            await _options.OwnerRepository.SaveChanges();
             return owner;
         }
 
@@ -203,8 +185,8 @@ namespace Defra.PTS.Common.ApiServices.Implementation
                 UpdatedOn = null
             };
 
-            await _applicationRepository.Add(application);
-            await _applicationRepository.SaveChanges();
+            await _options.ApplicationRepository.Add(application);
+            await _options.ApplicationRepository.SaveChanges();
             return application;
         }
 
@@ -235,8 +217,8 @@ namespace Defra.PTS.Common.ApiServices.Implementation
                 UpdatedOn = null
             };
 
-            await _travelDocumentRepository.Add(travelDocument);
-            await _travelDocumentRepository.SaveChanges();
+            await _options.TravelDocumentRepository.Add(travelDocument);
+            await _options.TravelDocumentRepository.SaveChanges();
             return travelDocument;
         }
 
@@ -252,7 +234,7 @@ namespace Defra.PTS.Common.ApiServices.Implementation
             }
             else
             {
-                var breed = await _breedRepository.FindById(queueModel.Pet.BreedId);
+                var breed = await _options.BreedRepository.FindById(queueModel.Pet.BreedId);
                 if (breed == null)
                 {
                     throw new OfflineApplicationProcessingException($"Invalid breed id: {queueModel.Pet.BreedId}");
@@ -295,8 +277,8 @@ namespace Defra.PTS.Common.ApiServices.Implementation
                 UpdatedOn = null
             };
 
-            await _petRepository.Add(pet);
-            await _petRepository.SaveChanges();
+            await _options.PetRepository.Add(pet);
+            await _options.PetRepository.SaveChanges();
             return pet;
         }
 
