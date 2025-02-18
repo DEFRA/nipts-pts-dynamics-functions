@@ -9,7 +9,7 @@ namespace Defra.PTS.Common.Repositories
     {
         public CommonDbContext(DbContextOptions<CommonDbContext> options) : base(options)
         {
-                
+
         }
 
         public DbSet<Entity.User>? User { get; set; }
@@ -20,5 +20,20 @@ namespace Defra.PTS.Common.Repositories
         public DbSet<Entity.Breed> Breed { get; set; }
         public DbSet<Entity.Colour> Colour { get; set; }
         public DbSet<Entity.TravelDocument> TravelDocument { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+
+           
+            modelBuilder.Entity<Entity.TravelDocument>(entity =>
+            {
+                entity.ToTable("TravelDocument");
+                entity.HasKey(e => e.Id);
+
+                
+                entity.Ignore(e => e.QRCode);
+            });
+        }
     }
 }

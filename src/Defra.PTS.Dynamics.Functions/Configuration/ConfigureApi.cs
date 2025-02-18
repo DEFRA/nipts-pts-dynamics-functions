@@ -1,5 +1,6 @@
 ﻿using Defra.PTS.Common.ApiServices.Implementation;
 using Defra.PTS.Common.ApiServices.Interface;
+
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
@@ -21,6 +22,8 @@ namespace Defra.PTS.Dynamics.Functions.Configuration
             services.AddScoped<IKeyVaultAccess, KeyVaultAccess>();
             services.AddScoped<IApplicationService, ApplicationService>();
             services.AddScoped<IServiceBusService, ServiceBusService>();
+            services.AddScoped<IOfflineApplicationService, OfflineApplicationService>();
+            services.AddScoped<IIDCOMSMappingValidator, IDCOMSMappingValidator>();
             return services;
         }
     }
