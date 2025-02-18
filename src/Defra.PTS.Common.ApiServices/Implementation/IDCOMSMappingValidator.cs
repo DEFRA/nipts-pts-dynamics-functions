@@ -56,22 +56,45 @@ namespace Defra.PTS.Common.ApiServices.Implementation
 
         private async Task ValidateAllFields(OfflineApplicationQueueModel model, ValidationResult result, CancellationToken cancellationToken)
         {
-            ValidateOwnerFields(model, result);
-            ValidateApplicantFields(model, result);
-            await ValidatePetBreedInfo(model, result, cancellationToken);
-            await ValidatePetColourInfo(model, result, cancellationToken);
-            ValidatePetBasicInfo(model, result);
-            ValidateAddressFields(model.OwnerAddress, "Owner", result);
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            cts.CancelAfter(TimeSpan.FromSeconds(TimeoutDuration));
 
-            if (model.ApplicantAddress != null)
+            try
             {
-                ValidateAddressFields(model.ApplicantAddress, "Applicant", result);
-            }
+                // Run synchronous validations first
+                ValidateOwnerFields(model, result);
+                ValidateApplicantFields(model, result);
 
-            ValidateBasicApplicationFields(model, result);
-            ValidateApplicationDates(model, result);
-            ValidateIDCOMSFormat(model, result);
-            await ValidateTravelDocumentFields(model, result, cancellationToken);
+                // Run asynchronous validations with timeout
+                var tasks = new List<Task>
+        {
+            ValidatePetBreedInfo(model, result, cts.Token),
+            ValidatePetColourInfo(model, result, cts.Token)
+        };
+
+                await Task.WhenAll(tasks).WaitAsync(TimeSpan.FromSeconds(TimeoutDuration), cts.Token);
+
+                // Continue with synchronous validations
+                ValidatePetBasicInfo(model, result);
+                ValidateAddressFields(model.OwnerAddress, "Owner", result);
+
+                if (model.ApplicantAddress != null)
+                {
+                    ValidateAddressFields(model.ApplicantAddress, "Applicant", result);
+                }
+
+                ValidateBasicApplicationFields(model, result);
+                ValidateApplicationDates(model, result);
+                ValidateIDCOMSFormat(model, result);
+
+                // Run final async validation
+                await ValidateTravelDocumentFields(model, result, cts.Token)
+                    .WaitAsync(TimeSpan.FromSeconds(TimeoutDuration), cts.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                throw new OperationCanceledException("Validation operation timed out");
+            }
         }
 
         private async Task ValidatePetBreedInfo(OfflineApplicationQueueModel model, ValidationResult result, CancellationToken cancellationToken)
@@ -114,8 +137,8 @@ namespace Defra.PTS.Common.ApiServices.Implementation
 
             try
             {
-                var colour = await _colourRepository.FindById(model.Pet.ColourId)
-                    .WaitAsync(TimeSpan.FromSeconds(TimeoutDuration), cts.Token);
+                var colourTask = _colourRepository.FindById(model.Pet.ColourId);
+                var colour = await colourTask.WaitAsync(TimeSpan.FromSeconds(TimeoutDuration), cts.Token);
 
                 if (colour == null)
                 {
