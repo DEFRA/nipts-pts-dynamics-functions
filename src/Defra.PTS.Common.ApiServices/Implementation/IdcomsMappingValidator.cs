@@ -434,49 +434,70 @@ namespace Defra.PTS.Common.ApiServices.Implementation
 
         private static void ValidateApplicantFields(OfflineApplicationQueueModel model, ValidationResult result)
         {
-            if (string.IsNullOrEmpty(model.Applicant.FullName))
+            ValidateApplicantName(model.Applicant.FullName, result);
+            ValidateApplicantEmail(model.Applicant.Email, result);
+            ValidateApplicantPhone(model.Applicant.Telephone, result);
+            ValidateApplicantFirstName(model.Applicant.FirstName, result);
+            ValidateApplicantLastName(model.Applicant.LastName, result);
+        }
+
+        private static void ValidateApplicantName(string fullName, ValidationResult result)
+        {
+            if (string.IsNullOrEmpty(fullName))
             {
                 result.AddError("ApplicantName", "Applicant name is required");
             }
-            else if (model.Applicant.FullName.Length > 300)
+            else if (fullName.Length > 300)
             {
                 result.AddError("ApplicantName", "Applicant name cannot exceed 300 characters");
             }
+        }
 
-            if (string.IsNullOrEmpty(model.Applicant.Email))
+        private static void ValidateApplicantEmail(string email, ValidationResult result)
+        {
+            if (string.IsNullOrEmpty(email))
             {
                 result.AddError("ApplicantEmail", "Applicant email is required");
             }
             else
             {
-                if (model.Applicant.Email.Length > 100)
+                if (email.Length > 100)
                 {
                     result.AddError("ApplicantEmail", "Applicant email cannot exceed 100 characters");
                 }
-                if (!IsValidEmail(model.Applicant.Email))
+                if (!IsValidEmail(email))
                 {
                     result.AddError("ApplicantEmail", "Invalid email format");
                 }
             }
+        }
 
-            if (!string.IsNullOrEmpty(model.Applicant.Telephone))
+        private static void ValidateApplicantPhone(string phone, ValidationResult result)
+        {
+            if (!string.IsNullOrEmpty(phone))
             {
-                if (model.Applicant.Telephone.Length > 50)
+                if (phone.Length > 50)
                 {
                     result.AddError("ApplicantPhone", "Applicant phone number cannot exceed 50 characters");
                 }
-                if (!IsValidPhoneNumber(model.Applicant.Telephone))
+                if (!IsValidPhoneNumber(phone))
                 {
                     result.AddError("ApplicantPhone", "Invalid phone number format");
                 }
             }
+        }
 
-            if (!string.IsNullOrEmpty(model.Applicant.FirstName) && model.Applicant.FirstName.Length > 100)
+        private static void ValidateApplicantFirstName(string firstName, ValidationResult result)
+        {
+            if (!string.IsNullOrEmpty(firstName) && firstName.Length > 100)
             {
                 result.AddError("ApplicantFirstName", "Applicant first name cannot exceed 100 characters");
             }
+        }
 
-            if (!string.IsNullOrEmpty(model.Applicant.LastName) && model.Applicant.LastName.Length > 100)
+        private static void ValidateApplicantLastName(string lastName, ValidationResult result)
+        {
+            if (!string.IsNullOrEmpty(lastName) && lastName.Length > 100)
             {
                 result.AddError("ApplicantLastName", "Applicant last name cannot exceed 100 characters");
             }
@@ -490,45 +511,66 @@ namespace Defra.PTS.Common.ApiServices.Implementation
                 return;
             }
 
-            if (string.IsNullOrEmpty(address.AddressLineOne))
+            ValidateAddressLineOne(address.AddressLineOne, addressType, result);
+            ValidateAddressLineTwo(address.AddressLineTwo, addressType, result);
+            ValidateTownOrCity(address.TownOrCity, addressType, result);
+            ValidateCounty(address.County, addressType, result);
+            ValidatePostCode(address.PostCode, addressType, result);
+        }
+
+        private static void ValidateAddressLineOne(string addressLineOne, string addressType, ValidationResult result)
+        {
+            if (string.IsNullOrEmpty(addressLineOne))
             {
                 result.AddError($"{addressType}AddressLineOne", $"{addressType} address line 1 is required");
             }
-            else if (address.AddressLineOne.Length > 250)
+            else if (addressLineOne.Length > 250)
             {
                 result.AddError($"{addressType}AddressLineOne", $"{addressType} address line 1 cannot exceed 250 characters");
             }
+        }
 
-            if (!string.IsNullOrEmpty(address.AddressLineTwo) && address.AddressLineTwo.Length > 250)
+        private static void ValidateAddressLineTwo(string addressLineTwo, string addressType, ValidationResult result)
+        {
+            if (!string.IsNullOrEmpty(addressLineTwo) && addressLineTwo.Length > 250)
             {
                 result.AddError($"{addressType}AddressLineTwo", $"{addressType} address line 2 cannot exceed 250 characters");
             }
+        }
 
-            if (string.IsNullOrEmpty(address.TownOrCity))
+        private static void ValidateTownOrCity(string townOrCity, string addressType, ValidationResult result)
+        {
+            if (string.IsNullOrEmpty(townOrCity))
             {
                 result.AddError($"{addressType}TownOrCity", $"{addressType} town/city is required");
             }
-            else if (address.TownOrCity.Length > 250)
+            else if (townOrCity.Length > 250)
             {
                 result.AddError($"{addressType}TownOrCity", $"{addressType} town/city cannot exceed 250 characters");
             }
+        }
 
-            if (!string.IsNullOrEmpty(address.County) && address.County.Length > 100)
+        private static void ValidateCounty(string county, string addressType, ValidationResult result)
+        {
+            if (!string.IsNullOrEmpty(county) && county.Length > 100)
             {
                 result.AddError($"{addressType}County", $"{addressType} county cannot exceed 100 characters");
             }
+        }
 
-            if (string.IsNullOrEmpty(address.PostCode))
+        private static void ValidatePostCode(string postCode, string addressType, ValidationResult result)
+        {
+            if (string.IsNullOrEmpty(postCode))
             {
                 result.AddError($"{addressType}PostCode", $"{addressType} postcode is required");
             }
             else
             {
-                if (address.PostCode.Length > 20)
+                if (postCode.Length > 20)
                 {
                     result.AddError($"{addressType}PostCode", $"{addressType} postcode cannot exceed 20 characters");
                 }
-                if (!IsValidPostcode(address.PostCode))
+                if (!IsValidPostcode(postCode))
                 {
                     result.AddError($"{addressType}PostCode", $"Invalid {addressType.ToLower()} postcode format");
                 }
