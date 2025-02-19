@@ -9,7 +9,6 @@ namespace Defra.PTS.Common.ApiServices.Implementation
 {
     public class IdcomsMappingValidator : IIdcomsMappingValidator
     {
-        // Field constants
         private const string REFERENCE_NUMBER_FIELD = "ReferenceNumber";
         private const string MODEL_FIELD = "Model";
         private const string OWNER_NAME_FIELD = "OwnerName";
@@ -21,7 +20,6 @@ namespace Defra.PTS.Common.ApiServices.Implementation
         private const string PET_SEX_ID_FIELD = "PetSexId";
         private const string PET_COLOR_ID_FIELD = "PetColorId";
 
-        // Validation limits
         private const int MAX_NAME_LENGTH = 300;
         private const int MAX_EMAIL_LENGTH = 100;
         private const int MAX_PHONE_LENGTH = 50;
@@ -31,7 +29,6 @@ namespace Defra.PTS.Common.ApiServices.Implementation
         private const int MAX_MICROCHIP_LENGTH = 15;
         private const int MIN_NAME_LENGTH = 2;
 
-        // Special IDs
         private const int MIXED_BREED_ID = 99;
         private const int UNKNOWN_BREED_ID = 100;
         private const int OTHER_COLOR_ID_1 = 11;
@@ -42,10 +39,7 @@ namespace Defra.PTS.Common.ApiServices.Implementation
         private readonly IBreedRepository _breedRepository;
         private readonly IColourRepository _colourRepository;
 
-        public IdcomsMappingValidator(
-            ILogger<IdcomsMappingValidator> logger,
-            IBreedRepository breedRepository,
-            IColourRepository colourRepository)
+        public IdcomsMappingValidator(ILogger<IdcomsMappingValidator> logger, IBreedRepository breedRepository, IColourRepository colourRepository)
         {
             _logger = logger;
             _breedRepository = breedRepository;
@@ -105,31 +99,47 @@ namespace Defra.PTS.Common.ApiServices.Implementation
 
             if (model.Pet.BreedId != MIXED_BREED_ID && model.Pet.BreedId != UNKNOWN_BREED_ID)
             {
-                var breed = _breedRepository.FindById(model.Pet.BreedId).Result;
-                if (breed == null)
+                try
                 {
-                    result.AddError(PET_BREED_ID_FIELD, $"Invalid breed id: {model.Pet.BreedId}");
+                    var breed = _breedRepository.FindById(model.Pet.BreedId).GetAwaiter().GetResult();
+                    if (breed == null)
+                    {
+                        result.AddError(PET_BREED_ID_FIELD, $"Invalid breed id: {model.Pet.BreedId}");
+                    }
+                    else if (breed.SpeciesId != model.Pet.SpeciesId)
+                    {
+                        result.AddError(PET_BREED_ID_FIELD, $"Breed {model.Pet.BreedId} is not valid for species {model.Pet.SpeciesId}");
+                    }
                 }
-                else if (breed.SpeciesId != model.Pet.SpeciesId)
+                catch (Exception ex)
                 {
-                    result.AddError(PET_BREED_ID_FIELD, $"Breed {model.Pet.BreedId} is not valid for species {model.Pet.SpeciesId}");
+                    _logger.LogError(ex, "Error validating breed");
+                    result.AddError(PET_BREED_ID_FIELD, "Error validating breed");
                 }
             }
         }
 
         private void ValidatePetColourInfo(OfflineApplicationQueueModel model, ValidationResult result)
         {
-            var colour = _colourRepository.FindById(model.Pet.ColourId).Result;
-            if (colour == null)
+            try
             {
-                result.AddError(PET_COLOR_ID_FIELD, $"Invalid colour id: {model.Pet.ColourId}");
+                var colour = _colourRepository.FindById(model.Pet.ColourId).GetAwaiter().GetResult();
+                if (colour == null)
+                {
+                    result.AddError(PET_COLOR_ID_FIELD, $"Invalid colour id: {model.Pet.ColourId}");
+                }
+                else if ((model.Pet.ColourId == OTHER_COLOR_ID_1 ||
+                         model.Pet.ColourId == OTHER_COLOR_ID_2 ||
+                         model.Pet.ColourId == OTHER_COLOR_ID_3) &&
+                        string.IsNullOrEmpty(model.Pet.OtherColour))
+                {
+                    result.AddError("OtherColour", "Other colour description is required for this colour selection");
+                }
             }
-            else if ((model.Pet.ColourId == OTHER_COLOR_ID_1 ||
-                     model.Pet.ColourId == OTHER_COLOR_ID_2 ||
-                     model.Pet.ColourId == OTHER_COLOR_ID_3) &&
-                    string.IsNullOrEmpty(model.Pet.OtherColour))
+            catch (Exception ex)
             {
-                result.AddError("OtherColour", "Other colour description is required for this colour selection");
+                _logger.LogError(ex, "Error validating colour");
+                result.AddError(PET_COLOR_ID_FIELD, "Error validating colour");
             }
         }
 
