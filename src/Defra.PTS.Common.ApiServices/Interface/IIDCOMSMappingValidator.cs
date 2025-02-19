@@ -4,6 +4,6 @@ namespace Defra.PTS.Common.ApiServices.Interface
 {
     public interface IIdcomsMappingValidator
     {
-        ValidationResult ValidateMapping(OfflineApplicationQueueModel queueModel);
+        Task<ValidationResult> ValidateMapping(OfflineApplicationQueueModel queueModel);
     }
 }

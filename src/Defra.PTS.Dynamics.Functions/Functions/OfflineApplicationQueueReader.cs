@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Defra.PTS.Common.ApiServices.Interface;
 using Defra.PTS.Common.Models;
 using Defra.PTS.Common.Models.CustomException;
@@ -8,27 +9,19 @@ using Newtonsoft.Json;
 
 namespace Defra.PTS.Dynamics.Functions.Functions
 {
-    public class OfflineApplicationQueueReader
+    public class OfflineApplicationQueueReader(IOfflineApplicationService offlineApplicationService, ILogger<OfflineApplicationQueueReader> logger)
     {
-        private readonly IOfflineApplicationService _offlineApplicationService;
-        private readonly ILogger<OfflineApplicationQueueReader> _logger;
-
-        public OfflineApplicationQueueReader(
-            IOfflineApplicationService offlineApplicationService,
-            ILogger<OfflineApplicationQueueReader> logger)
-        {
-            _offlineApplicationService = offlineApplicationService;
-            _logger = logger;
-        }
+        private readonly IOfflineApplicationService _offlineApplicationService = offlineApplicationService;
+        private readonly ILogger<OfflineApplicationQueueReader> _logger = logger;
 
         [FunctionName("ProcessOfflineApplication")]
-        public void ProcessOfflineApplication(
+        public async Task ProcessOfflineApplication(
             [ServiceBusTrigger("%AzureServiceBusOptions:OfflineApplicationQueueName%",
             Connection = "ServiceBusConnection")] string queueMessage)
         {
             try
             {
-                ProcessQueueMessage(queueMessage);
+                await ProcessQueueMessage(queueMessage);
             }
             catch (JsonException ex)
             {
@@ -42,7 +35,7 @@ namespace Defra.PTS.Dynamics.Functions.Functions
             }
         }
 
-        private void ProcessQueueMessage(string queueMessage)
+        private async Task ProcessQueueMessage(string queueMessage)
         {
             _logger.LogInformation("Starting to process offline application message: {Message}", queueMessage);
 
@@ -58,7 +51,7 @@ namespace Defra.PTS.Dynamics.Functions.Functions
                 return;
             }
 
-            ProcessApplication(offlineApplication);
+            await ProcessApplication(offlineApplication);
         }
 
         private OfflineApplicationQueueModel DeserializeMessage(string queueMessage)
@@ -72,11 +65,11 @@ namespace Defra.PTS.Dynamics.Functions.Functions
             return offlineApplication;
         }
 
-        private void ProcessApplication(OfflineApplicationQueueModel offlineApplication)
+        private async Task ProcessApplication(OfflineApplicationQueueModel offlineApplication)
         {
             try
             {
-                _offlineApplicationService.ProcessOfflineApplication(offlineApplication);
+                await _offlineApplicationService.ProcessOfflineApplication(offlineApplication);
                 _logger.LogInformation("Successfully processed offline application for reference: {Reference}",
                     offlineApplication.Application.ReferenceNumber);
             }
@@ -84,13 +77,15 @@ namespace Defra.PTS.Dynamics.Functions.Functions
             {
                 _logger.LogWarning(ex, "Validation failure for application {Reference}",
                     offlineApplication.Application.ReferenceNumber);
-                throw;
+                throw new OfflineApplicationProcessingException(
+                    $"Validation failure for application {offlineApplication.Application.ReferenceNumber}", ex);
             }
             catch (OfflineApplicationProcessingException ex)
             {
                 _logger.LogError(ex, "Processing error for application {Reference}",
                     offlineApplication.Application.ReferenceNumber);
-                throw;
+                throw new OfflineApplicationProcessingException(
+                    $"Processing error for application {offlineApplication.Application.ReferenceNumber}", ex);
             }
         }
     }
