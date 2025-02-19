@@ -380,43 +380,57 @@ namespace Defra.PTS.Common.ApiServices.Implementation
 
         private static void ValidateOwnerFields(OfflineApplicationQueueModel model, ValidationResult result)
         {
-            if (string.IsNullOrEmpty(model.Owner.FullName))
+            ValidateOwnerName(model.Owner.FullName, result);
+            ValidateOwnerEmail(model.Owner.Email, result);
+            ValidateOwnerPhone(model.Owner.Telephone, result);
+        }
+
+        private static void ValidateOwnerName(string fullName, ValidationResult result)
+        {
+            if (string.IsNullOrEmpty(fullName))
             {
                 result.AddError("OwnerName", "Owner name is required");
             }
-            else if (model.Owner.FullName.Length > 300)
+            else if (fullName.Length > 300)
             {
                 result.AddError("OwnerName", "Owner name cannot exceed 300 characters");
             }
+        }
 
-            if (string.IsNullOrEmpty(model.Owner.Email))
+        private static void ValidateOwnerEmail(string email, ValidationResult result)
+        {
+            if (string.IsNullOrEmpty(email))
             {
                 result.AddError("OwnerEmail", "Owner email is required");
             }
             else
             {
-                if (model.Owner.Email.Length > 100)
+                if (email.Length > 100)
                 {
                     result.AddError("OwnerEmail", "Owner email cannot exceed 100 characters");
                 }
-                if (!IsValidEmail(model.Owner.Email))
+                if (!IsValidEmail(email))
                 {
                     result.AddError("OwnerEmail", "Invalid email format");
                 }
             }
+        }
 
-            if (!string.IsNullOrEmpty(model.Owner.Telephone))
+        private static void ValidateOwnerPhone(string phone, ValidationResult result)
+        {
+            if (!string.IsNullOrEmpty(phone))
             {
-                if (model.Owner.Telephone.Length > 50)
+                if (phone.Length > 50)
                 {
                     result.AddError("OwnerPhone", "Owner phone number cannot exceed 50 characters");
                 }
-                if (!IsValidPhoneNumber(model.Owner.Telephone))
+                if (!IsValidPhoneNumber(phone))
                 {
                     result.AddError("OwnerPhone", "Invalid phone number format");
                 }
             }
         }
+
 
         private static void ValidateApplicantFields(OfflineApplicationQueueModel model, ValidationResult result)
         {
