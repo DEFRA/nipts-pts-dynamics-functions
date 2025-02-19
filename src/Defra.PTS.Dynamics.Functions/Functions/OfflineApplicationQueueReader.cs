@@ -31,14 +31,14 @@ namespace Defra.PTS.Dynamics.Functions.Functions
 
                 if (string.IsNullOrEmpty(queueMessage))
                 {
-                    _logger.LogWarning("Message was empty");
+                    _logger.LogWarning("Empty message received in offline application queue");
                     return;
                 }
 
                 var offlineApplication = JsonConvert.DeserializeObject<OfflineApplicationQueueModel>(queueMessage);
                 if (offlineApplication == null)
                 {
-                    _logger.LogWarning("Could not deserialize message to OfflineApplicationQueueModel");
+                    _logger.LogWarning("Failed to deserialize message to OfflineApplicationQueueModel: {Message}", queueMessage);
                     return;
                 }
 
@@ -50,14 +50,26 @@ namespace Defra.PTS.Dynamics.Functions.Functions
                 }
                 catch (OfflineApplicationProcessingException ex) when (ex.Message.Contains("Validation failed"))
                 {
-                    _logger.LogWarning(ex, "Validation failure for message {Message}", ex.Message);
-                    throw; // This will cause the message to be moved to dead letter queue
+                    _logger.LogWarning("Validation failure for application {Reference}: {Message}",
+                        offlineApplication.Application.ReferenceNumber, ex.Message);
+                    throw new OfflineApplicationProcessingException($"Validation failed for application {offlineApplication.Application.ReferenceNumber}", ex);
                 }
+                catch (OfflineApplicationProcessingException ex)
+                {
+                    _logger.LogError(ex, "Processing error for application {Reference}",
+                        offlineApplication.Application.ReferenceNumber);
+                    throw new OfflineApplicationProcessingException($"Failed to process application {offlineApplication.Application.ReferenceNumber}", ex);
+                }
+            }
+            catch (JsonException ex)
+            {
+                _logger.LogError(ex, "JSON deserialization error for message: {Message}", queueMessage);
+                throw new OfflineApplicationProcessingException("Invalid message format", ex);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error processing offline application: {Message}", ex.Message);
-                throw; // Retries will be handled by the Service Bus retry policy
+                _logger.LogError(ex, "Unhandled error processing offline application message: {Message}", queueMessage);
+                throw new OfflineApplicationProcessingException("Unhandled error processing offline application", ex);
             }
         }
     }
