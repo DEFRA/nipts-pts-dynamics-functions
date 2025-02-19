@@ -1,12 +1,10 @@
 using System;
-using System.Threading.Tasks;
 using Defra.PTS.Common.ApiServices.Interface;
 using Defra.PTS.Common.Models;
 using Defra.PTS.Common.Models.CustomException;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-
 
 namespace Defra.PTS.Dynamics.Functions.Functions
 {
@@ -24,14 +22,12 @@ namespace Defra.PTS.Dynamics.Functions.Functions
         }
 
         [FunctionName("ProcessOfflineApplication")]
-        public async Task ProcessOfflineApplication(
-        [ServiceBusTrigger("%AzureServiceBusOptions:OfflineApplicationQueueName%", Connection = "ServiceBusConnection")] string queueMessage)
+        public void ProcessOfflineApplication(
+            [ServiceBusTrigger("%AzureServiceBusOptions:OfflineApplicationQueueName%", Connection = "ServiceBusConnection")] string queueMessage)
         {
             try
             {
-                _logger.LogInformation("Starting to process offline application message: {Message}",
-              queueMessage);
-                _logger.LogInformation($"Starting to process offline application message: {queueMessage}");
+                _logger.LogInformation("Starting to process offline application message: {Message}", queueMessage);
 
                 if (string.IsNullOrEmpty(queueMessage))
                 {
@@ -48,9 +44,9 @@ namespace Defra.PTS.Dynamics.Functions.Functions
 
                 try
                 {
-                    await _offlineApplicationService.ProcessOfflineApplication(offlineApplication);
+                    _offlineApplicationService.ProcessOfflineApplication(offlineApplication);
                     _logger.LogInformation("Successfully processed offline application for reference: {Reference}",
-                offlineApplication.Application.ReferenceNumber);
+                        offlineApplication.Application.ReferenceNumber);
                 }
                 catch (OfflineApplicationProcessingException ex) when (ex.Message.Contains("Validation failed"))
                 {
@@ -60,11 +56,9 @@ namespace Defra.PTS.Dynamics.Functions.Functions
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error processing offline application", ex);
+                _logger.LogError(ex, "Error processing offline application: {Message}", ex.Message);
                 throw; // Retries will be handled by the Service Bus retry policy
             }
         }
-
     }
 }
-

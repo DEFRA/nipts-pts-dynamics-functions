@@ -2,9 +2,8 @@
 
 namespace Defra.PTS.Common.ApiServices.Interface
 {
-   
     public interface IOfflineApplicationService
-    {      
-        Task ProcessOfflineApplication(OfflineApplicationQueueModel queueModel);
+    {
+        void ProcessOfflineApplication(OfflineApplicationQueueModel queueModel);
     }
 }

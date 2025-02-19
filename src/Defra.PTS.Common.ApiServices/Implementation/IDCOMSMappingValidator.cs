@@ -7,36 +7,64 @@ using System.Text.RegularExpressions;
 
 namespace Defra.PTS.Common.ApiServices.Implementation
 {
-    public class IdcomsMappingValidator(
-        ILogger<IdcomsMappingValidator> logger,
-        IBreedRepository breedRepository,
-        IColourRepository colourRepository) : IIdcomsMappingValidator
+    public class IdcomsMappingValidator : IIdcomsMappingValidator
     {
-        private const string ReferenceNumberField = "ReferenceNumber";
-        private const int TimeoutDuration = 30;
-        private readonly ILogger<IdcomsMappingValidator> _logger = logger;
-        private readonly IBreedRepository _breedRepository = breedRepository;
-        private readonly IColourRepository _colourRepository = colourRepository;
+        // Field constants
+        private const string REFERENCE_NUMBER_FIELD = "ReferenceNumber";
+        private const string MODEL_FIELD = "Model";
+        private const string OWNER_NAME_FIELD = "OwnerName";
+        private const string OWNER_EMAIL_FIELD = "OwnerEmail";
+        private const string OWNER_PHONE_FIELD = "OwnerPhone";
+        private const string PET_NAME_FIELD = "PetName";
+        private const string PET_BREED_ID_FIELD = "PetBreedId";
+        private const string PET_SPECIES_ID_FIELD = "PetSpeciesId";
+        private const string PET_SEX_ID_FIELD = "PetSexId";
+        private const string PET_COLOR_ID_FIELD = "PetColorId";
 
-        public async Task<ValidationResult> ValidateMapping(OfflineApplicationQueueModel queueModel)
+        // Validation limits
+        private const int MAX_NAME_LENGTH = 300;
+        private const int MAX_EMAIL_LENGTH = 100;
+        private const int MAX_PHONE_LENGTH = 50;
+        private const int MAX_ADDRESS_LINE_LENGTH = 250;
+        private const int MAX_COUNTY_LENGTH = 100;
+        private const int MAX_POSTCODE_LENGTH = 20;
+        private const int MAX_MICROCHIP_LENGTH = 15;
+        private const int MIN_NAME_LENGTH = 2;
+
+        // Special IDs
+        private const int MIXED_BREED_ID = 99;
+        private const int UNKNOWN_BREED_ID = 100;
+        private const int OTHER_COLOR_ID_1 = 11;
+        private const int OTHER_COLOR_ID_2 = 20;
+        private const int OTHER_COLOR_ID_3 = 29;
+
+        private readonly ILogger<IdcomsMappingValidator> _logger;
+        private readonly IBreedRepository _breedRepository;
+        private readonly IColourRepository _colourRepository;
+
+        public IdcomsMappingValidator(
+            ILogger<IdcomsMappingValidator> logger,
+            IBreedRepository breedRepository,
+            IColourRepository colourRepository)
+        {
+            _logger = logger;
+            _breedRepository = breedRepository;
+            _colourRepository = colourRepository;
+        }
+
+        public ValidationResult ValidateMapping(OfflineApplicationQueueModel queueModel)
         {
             var result = new ValidationResult();
-            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(TimeoutDuration));
 
             if (queueModel == null)
             {
-                result.AddError("Model", "Request model cannot be null");
+                result.AddError(MODEL_FIELD, "Request model cannot be null");
                 return result;
             }
 
             try
             {
-                await ValidateAllFields(queueModel, result, cts.Token);
-            }
-            catch (OperationCanceledException ex)
-            {
-                _logger.LogWarning(ex, "Validation timed out after {Seconds} seconds", TimeoutDuration);
-                result.AddError("Timeout", "Validation operation timed out");
+                ValidateAllFields(queueModel, result);
             }
             catch (Exception ex)
             {
@@ -47,12 +75,12 @@ namespace Defra.PTS.Common.ApiServices.Implementation
             return result;
         }
 
-        private async Task ValidateAllFields(OfflineApplicationQueueModel model, ValidationResult result, CancellationToken cancellationToken)
+        private void ValidateAllFields(OfflineApplicationQueueModel model, ValidationResult result)
         {
             ValidateOwnerFields(model, result);
             ValidateApplicantFields(model, result);
-            await ValidatePetBreedInfo(model, result, cancellationToken);
-            await ValidatePetColourInfo(model, result, cancellationToken);
+            ValidatePetBreedInfo(model, result);
+            ValidatePetColourInfo(model, result);
             ValidatePetBasicInfo(model, result);
             ValidateAddressFields(model.OwnerAddress, "Owner", result);
 
@@ -64,63 +92,44 @@ namespace Defra.PTS.Common.ApiServices.Implementation
             ValidateBasicApplicationFields(model, result);
             ValidateApplicationDates(model, result);
             ValidateIDCOMSFormat(model, result);
-            await ValidateTravelDocumentFields(model, result, cancellationToken);
+            ValidateTravelDocumentFields(model, result);
         }
 
-        private async Task ValidatePetBreedInfo(OfflineApplicationQueueModel model, ValidationResult result, CancellationToken cancellationToken)
+        private void ValidatePetBreedInfo(OfflineApplicationQueueModel model, ValidationResult result)
         {
             if (!Enum.IsDefined(typeof(PetSpeciesType), model.Pet.SpeciesId))
             {
-                result.AddError("PetSpeciesId", $"Invalid species value: {model.Pet.SpeciesId}");
+                result.AddError(PET_SPECIES_ID_FIELD, $"Invalid species value: {model.Pet.SpeciesId}");
                 return;
             }
 
-            if (model.Pet.BreedId != 99 && model.Pet.BreedId != 100)
+            if (model.Pet.BreedId != MIXED_BREED_ID && model.Pet.BreedId != UNKNOWN_BREED_ID)
             {
-                var breedTask = _breedRepository.FindById(model.Pet.BreedId);
-                using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-                cts.CancelAfter(TimeSpan.FromSeconds(TimeoutDuration));
-
-                try
+                var breed = _breedRepository.FindById(model.Pet.BreedId).Result;
+                if (breed == null)
                 {
-                    var breed = await breedTask.WaitAsync(cts.Token);
-                    if (breed == null)
-                    {
-                        result.AddError("PetBreedId", $"Invalid breed id: {model.Pet.BreedId}");
-                    }
-                    else if (breed.SpeciesId != model.Pet.SpeciesId)
-                    {
-                        result.AddError("PetBreedId", $"Breed {model.Pet.BreedId} is not valid for species {model.Pet.SpeciesId}");
-                    }
+                    result.AddError(PET_BREED_ID_FIELD, $"Invalid breed id: {model.Pet.BreedId}");
                 }
-                catch (OperationCanceledException)
+                else if (breed.SpeciesId != model.Pet.SpeciesId)
                 {
-                    throw new OperationCanceledException("Breed validation timed out");
+                    result.AddError(PET_BREED_ID_FIELD, $"Breed {model.Pet.BreedId} is not valid for species {model.Pet.SpeciesId}");
                 }
             }
         }
 
-        private async Task ValidatePetColourInfo(OfflineApplicationQueueModel model, ValidationResult result, CancellationToken cancellationToken)
+        private void ValidatePetColourInfo(OfflineApplicationQueueModel model, ValidationResult result)
         {
-            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            cts.CancelAfter(TimeSpan.FromSeconds(TimeoutDuration));
-
-            try
+            var colour = _colourRepository.FindById(model.Pet.ColourId).Result;
+            if (colour == null)
             {
-                var colour = await _colourRepository.FindById(model.Pet.ColourId).WaitAsync(cts.Token);
-                if (colour == null)
-                {
-                    result.AddError("PetColourId", $"Invalid colour id: {model.Pet.ColourId}");
-                }
-                else if ((model.Pet.ColourId == 11 || model.Pet.ColourId == 20 || model.Pet.ColourId == 29)
-                         && string.IsNullOrEmpty(model.Pet.OtherColour))
-                {
-                    result.AddError("OtherColour", "Other colour description is required for this colour selection");
-                }
+                result.AddError(PET_COLOR_ID_FIELD, $"Invalid colour id: {model.Pet.ColourId}");
             }
-            catch (OperationCanceledException)
+            else if ((model.Pet.ColourId == OTHER_COLOR_ID_1 ||
+                     model.Pet.ColourId == OTHER_COLOR_ID_2 ||
+                     model.Pet.ColourId == OTHER_COLOR_ID_3) &&
+                    string.IsNullOrEmpty(model.Pet.OtherColour))
             {
-                throw new OperationCanceledException("Colour validation timed out");
+                result.AddError("OtherColour", "Other colour description is required for this colour selection");
             }
         }
 
@@ -128,7 +137,7 @@ namespace Defra.PTS.Common.ApiServices.Implementation
         {
             if (!Enum.IsDefined(typeof(PetGenderType), model.Pet.SexId))
             {
-                result.AddError("PetSexId", $"Invalid sex value: {model.Pet.SexId}");
+                result.AddError(PET_SEX_ID_FIELD, $"Invalid sex value: {model.Pet.SexId}");
             }
 
             ValidatePetName(model, result);
@@ -141,11 +150,11 @@ namespace Defra.PTS.Common.ApiServices.Implementation
         {
             if (string.IsNullOrEmpty(model.Pet.Name))
             {
-                result.AddError("PetName", "Pet name is required");
+                result.AddError(PET_NAME_FIELD, "Pet name is required");
             }
-            else if (model.Pet.Name.Length > 300)
+            else if (model.Pet.Name.Length > MAX_NAME_LENGTH)
             {
-                result.AddError("PetName", "Pet name cannot exceed 300 characters");
+                result.AddError(PET_NAME_FIELD, $"Pet name cannot exceed {MAX_NAME_LENGTH} characters");
             }
         }
 
@@ -157,9 +166,9 @@ namespace Defra.PTS.Common.ApiServices.Implementation
                 {
                     result.AddError("MicrochipNumber", "Invalid microchip number format");
                 }
-                if (model.Pet.MicrochipNumber.Length > 15)
+                if (model.Pet.MicrochipNumber.Length > MAX_MICROCHIP_LENGTH)
                 {
-                    result.AddError("MicrochipNumber", "Microchip number cannot exceed 15 characters");
+                    result.AddError("MicrochipNumber", $"Microchip number cannot exceed {MAX_MICROCHIP_LENGTH} characters");
                 }
             }
         }
@@ -180,15 +189,15 @@ namespace Defra.PTS.Common.ApiServices.Implementation
         private static void ValidatePetAdditionalInfo(OfflineApplicationQueueModel model, ValidationResult result)
         {
             if (!string.IsNullOrEmpty(model.Pet.AdditionalInfoMixedBreedOrUnknown)
-                && model.Pet.AdditionalInfoMixedBreedOrUnknown.Length > 300)
+                && model.Pet.AdditionalInfoMixedBreedOrUnknown.Length > MAX_NAME_LENGTH)
             {
-                result.AddError("AdditionalInfoMixedBreedOrUnknown", "Additional breed info cannot exceed 300 characters");
+                result.AddError("AdditionalInfoMixedBreedOrUnknown", $"Additional breed info cannot exceed {MAX_NAME_LENGTH} characters");
             }
 
             if (!string.IsNullOrEmpty(model.Pet.UniqueFeatureDescription)
-                && model.Pet.UniqueFeatureDescription.Length > 300)
+                && model.Pet.UniqueFeatureDescription.Length > MAX_NAME_LENGTH)
             {
-                result.AddError("UniqueFeatureDescription", "Unique feature description cannot exceed 300 characters");
+                result.AddError("UniqueFeatureDescription", $"Unique feature description cannot exceed {MAX_NAME_LENGTH} characters");
             }
         }
 
@@ -213,18 +222,18 @@ namespace Defra.PTS.Common.ApiServices.Implementation
         {
             if (string.IsNullOrEmpty(model.Application.ReferenceNumber))
             {
-                result.AddError(ReferenceNumberField, "Reference number is required");
+                result.AddError(REFERENCE_NUMBER_FIELD, "Reference number is required");
                 return;
             }
 
-            if (model.Application.ReferenceNumber.Length > 20)
+            if (model.Application.ReferenceNumber.Length > MAX_MICROCHIP_LENGTH)
             {
-                result.AddError(ReferenceNumberField, "Reference number cannot exceed 20 characters");
+                result.AddError(REFERENCE_NUMBER_FIELD, $"Reference number cannot exceed {MAX_MICROCHIP_LENGTH} characters");
             }
 
             if (!IsValidReferenceNumber(model.Application.ReferenceNumber))
             {
-                result.AddError(ReferenceNumberField, "Invalid reference number format");
+                result.AddError(REFERENCE_NUMBER_FIELD, "Invalid reference number format");
             }
         }
 
@@ -251,23 +260,16 @@ namespace Defra.PTS.Common.ApiServices.Implementation
             }
         }
 
-        private static async Task ValidateTravelDocumentFields(OfflineApplicationQueueModel model, ValidationResult result, CancellationToken cancellationToken)
+        private static void ValidateTravelDocumentFields(OfflineApplicationQueueModel model, ValidationResult result)
         {
-            try
-            {
-                await Task.Run(() => ValidateTravelDocumentBasicFields(model, result), cancellationToken);
-            }
-            catch (OperationCanceledException)
-            {
-                throw new OperationCanceledException("Travel document validation timed out");
-            }
+            ValidateTravelDocumentBasicFields(model, result);
         }
 
         private static void ValidateTravelDocumentBasicFields(OfflineApplicationQueueModel model, ValidationResult result)
         {
             if (model.Ptd == null)
             {
-                result.AddError(ReferenceNumberField, "Travel document information is required");
+                result.AddError(REFERENCE_NUMBER_FIELD, "Travel document information is required");
                 return;
             }
 
@@ -280,18 +282,18 @@ namespace Defra.PTS.Common.ApiServices.Implementation
         {
             if (string.IsNullOrEmpty(model.Ptd.DocumentReferenceNumber))
             {
-                result.AddError(ReferenceNumberField, "Document reference number is required");
+                result.AddError(REFERENCE_NUMBER_FIELD, "Document reference number is required");
                 return;
             }
 
-            if (model.Ptd.DocumentReferenceNumber.Length > 20)
+            if (model.Ptd.DocumentReferenceNumber.Length > MAX_MICROCHIP_LENGTH)
             {
-                result.AddError(ReferenceNumberField, "Document reference number cannot exceed 20 characters");
+                result.AddError(REFERENCE_NUMBER_FIELD, $"Document reference number cannot exceed {MAX_MICROCHIP_LENGTH} characters");
             }
 
             if (model.Ptd.DocumentReferenceNumber != model.Application.ReferenceNumber)
             {
-                result.AddError(ReferenceNumberField, "Document reference number must match application reference number");
+                result.AddError(REFERENCE_NUMBER_FIELD, "Document reference number must match application reference number");
             }
         }
 
@@ -324,22 +326,22 @@ namespace Defra.PTS.Common.ApiServices.Implementation
                   model.Application.ReferenceNumber.StartsWith("AD", StringComparison.OrdinalIgnoreCase)) ||
                 !Regex.IsMatch(model.Application.ReferenceNumber, @"^(GB|AD)\d{8}$"))
             {
-                result.AddError(ReferenceNumberField, "Reference must start with 'GB' or 'AD' followed by 8 digits");
+                result.AddError(REFERENCE_NUMBER_FIELD, "Reference must start with 'GB' or 'AD' followed by 8 digits");
             }
         }
 
         private static void ValidateIDCOMSNames(OfflineApplicationQueueModel model, ValidationResult result)
         {
             if (!string.IsNullOrWhiteSpace(model.Owner.FullName) &&
-                (model.Owner.FullName.Length < 2 || model.Owner.FullName.Length > 300))
+                (model.Owner.FullName.Length < MIN_NAME_LENGTH || model.Owner.FullName.Length > MAX_NAME_LENGTH))
             {
-                result.AddError("OwnerName", "Owner name must be between 2 and 300 characters");
+                result.AddError(OWNER_NAME_FIELD, $"Owner name must be between {MIN_NAME_LENGTH} and {MAX_NAME_LENGTH} characters");
             }
 
             if (!string.IsNullOrWhiteSpace(model.Pet.Name) &&
-                (model.Pet.Name.Length < 2 || model.Pet.Name.Length > 300))
+                (model.Pet.Name.Length < MIN_NAME_LENGTH || model.Pet.Name.Length > MAX_NAME_LENGTH))
             {
-                result.AddError("PetName", "Pet name must be between 2 and 300 characters");
+                result.AddError(PET_NAME_FIELD, $"Pet name must be between {MIN_NAME_LENGTH} and {MAX_NAME_LENGTH} characters");
             }
         }
 
@@ -347,38 +349,38 @@ namespace Defra.PTS.Common.ApiServices.Implementation
         {
             if (string.IsNullOrEmpty(model.Owner.FullName))
             {
-                result.AddError("OwnerName", "Owner name is required");
+                result.AddError(OWNER_NAME_FIELD, "Owner name is required");
             }
-            else if (model.Owner.FullName.Length > 300)
+            else if (model.Owner.FullName.Length > MAX_NAME_LENGTH)
             {
-                result.AddError("OwnerName", "Owner name cannot exceed 300 characters");
+                result.AddError(OWNER_NAME_FIELD, $"Owner name cannot exceed {MAX_NAME_LENGTH} characters");
             }
 
             if (string.IsNullOrEmpty(model.Owner.Email))
             {
-                result.AddError("OwnerEmail", "Owner email is required");
+                result.AddError(OWNER_EMAIL_FIELD, "Owner email is required");
             }
             else
             {
-                if (model.Owner.Email.Length > 100)
+                if (model.Owner.Email.Length > MAX_EMAIL_LENGTH)
                 {
-                    result.AddError("OwnerEmail", "Owner email cannot exceed 100 characters");
+                    result.AddError(OWNER_EMAIL_FIELD, $"Owner email cannot exceed {MAX_EMAIL_LENGTH} characters");
                 }
                 if (!IsValidEmail(model.Owner.Email))
                 {
-                    result.AddError("OwnerEmail", "Invalid email format");
+                    result.AddError(OWNER_EMAIL_FIELD, "Invalid email format");
                 }
             }
 
             if (!string.IsNullOrEmpty(model.Owner.Telephone))
             {
-                if (model.Owner.Telephone.Length > 50)
+                if (model.Owner.Telephone.Length > MAX_PHONE_LENGTH)
                 {
-                    result.AddError("OwnerPhone", "Owner phone number cannot exceed 50 characters");
+                    result.AddError(OWNER_PHONE_FIELD, $"Owner phone number cannot exceed {MAX_PHONE_LENGTH} characters");
                 }
                 if (!IsValidPhoneNumber(model.Owner.Telephone))
                 {
-                    result.AddError("OwnerPhone", "Invalid phone number format");
+                    result.AddError(OWNER_PHONE_FIELD, "Invalid phone number format");
                 }
             }
         }
@@ -389,9 +391,9 @@ namespace Defra.PTS.Common.ApiServices.Implementation
             {
                 result.AddError("ApplicantName", "Applicant name is required");
             }
-            else if (model.Applicant.FullName.Length > 300)
+            else if (model.Applicant.FullName.Length > MAX_NAME_LENGTH)
             {
-                result.AddError("ApplicantName", "Applicant name cannot exceed 300 characters");
+                result.AddError("ApplicantName", $"Applicant name cannot exceed {MAX_NAME_LENGTH} characters");
             }
 
             if (string.IsNullOrEmpty(model.Applicant.Email))
@@ -400,9 +402,9 @@ namespace Defra.PTS.Common.ApiServices.Implementation
             }
             else
             {
-                if (model.Applicant.Email.Length > 100)
+                if (model.Applicant.Email.Length > MAX_EMAIL_LENGTH)
                 {
-                    result.AddError("ApplicantEmail", "Applicant email cannot exceed 100 characters");
+                    result.AddError("ApplicantEmail", $"Applicant email cannot exceed {MAX_EMAIL_LENGTH} characters");
                 }
                 if (!IsValidEmail(model.Applicant.Email))
                 {
@@ -412,9 +414,9 @@ namespace Defra.PTS.Common.ApiServices.Implementation
 
             if (!string.IsNullOrEmpty(model.Applicant.Telephone))
             {
-                if (model.Applicant.Telephone.Length > 50)
+                if (model.Applicant.Telephone.Length > MAX_PHONE_LENGTH)
                 {
-                    result.AddError("ApplicantPhone", "Applicant phone number cannot exceed 50 characters");
+                    result.AddError("ApplicantPhone", $"Applicant phone number cannot exceed {MAX_PHONE_LENGTH} characters");
                 }
                 if (!IsValidPhoneNumber(model.Applicant.Telephone))
                 {
@@ -422,14 +424,14 @@ namespace Defra.PTS.Common.ApiServices.Implementation
                 }
             }
 
-            if (!string.IsNullOrEmpty(model.Applicant.FirstName) && model.Applicant.FirstName.Length > 100)
+            if (!string.IsNullOrEmpty(model.Applicant.FirstName) && model.Applicant.FirstName.Length > MAX_EMAIL_LENGTH)
             {
-                result.AddError("ApplicantFirstName", "Applicant first name cannot exceed 100 characters");
+                result.AddError("ApplicantFirstName", $"Applicant first name cannot exceed {MAX_EMAIL_LENGTH} characters");
             }
 
-            if (!string.IsNullOrEmpty(model.Applicant.LastName) && model.Applicant.LastName.Length > 100)
+            if (!string.IsNullOrEmpty(model.Applicant.LastName) && model.Applicant.LastName.Length > MAX_EMAIL_LENGTH)
             {
-                result.AddError("ApplicantLastName", "Applicant last name cannot exceed 100 characters");
+                result.AddError("ApplicantLastName", $"Applicant last name cannot exceed {MAX_EMAIL_LENGTH} characters");
             }
         }
 
@@ -445,28 +447,28 @@ namespace Defra.PTS.Common.ApiServices.Implementation
             {
                 result.AddError($"{addressType}AddressLineOne", $"{addressType} address line 1 is required");
             }
-            else if (address.AddressLineOne.Length > 250)
+            else if (address.AddressLineOne.Length > MAX_ADDRESS_LINE_LENGTH)
             {
-                result.AddError($"{addressType}AddressLineOne", $"{addressType} address line 1 cannot exceed 250 characters");
+                result.AddError($"{addressType}AddressLineOne", $"{addressType} address line 1 cannot exceed {MAX_ADDRESS_LINE_LENGTH} characters");
             }
 
-            if (!string.IsNullOrEmpty(address.AddressLineTwo) && address.AddressLineTwo.Length > 250)
+            if (!string.IsNullOrEmpty(address.AddressLineTwo) && address.AddressLineTwo.Length > MAX_ADDRESS_LINE_LENGTH)
             {
-                result.AddError($"{addressType}AddressLineTwo", $"{addressType} address line 2 cannot exceed 250 characters");
+                result.AddError($"{addressType}AddressLineTwo", $"{addressType} address line 2 cannot exceed {MAX_ADDRESS_LINE_LENGTH} characters");
             }
 
             if (string.IsNullOrEmpty(address.TownOrCity))
             {
                 result.AddError($"{addressType}TownOrCity", $"{addressType} town/city is required");
             }
-            else if (address.TownOrCity.Length > 250)
+            else if (address.TownOrCity.Length > MAX_ADDRESS_LINE_LENGTH)
             {
-                result.AddError($"{addressType}TownOrCity", $"{addressType} town/city cannot exceed 250 characters");
+                result.AddError($"{addressType}TownOrCity", $"{addressType} town/city cannot exceed {MAX_ADDRESS_LINE_LENGTH} characters");
             }
 
-            if (!string.IsNullOrEmpty(address.County) && address.County.Length > 100)
+            if (!string.IsNullOrEmpty(address.County) && address.County.Length > MAX_COUNTY_LENGTH)
             {
-                result.AddError($"{addressType}County", $"{addressType} county cannot exceed 100 characters");
+                result.AddError($"{addressType}County", $"{addressType} county cannot exceed {MAX_COUNTY_LENGTH} characters");
             }
 
             if (string.IsNullOrEmpty(address.PostCode))
@@ -475,9 +477,9 @@ namespace Defra.PTS.Common.ApiServices.Implementation
             }
             else
             {
-                if (address.PostCode.Length > 20)
+                if (address.PostCode.Length > MAX_POSTCODE_LENGTH)
                 {
-                    result.AddError($"{addressType}PostCode", $"{addressType} postcode cannot exceed 20 characters");
+                    result.AddError($"{addressType}PostCode", $"{addressType} postcode cannot exceed {MAX_POSTCODE_LENGTH} characters");
                 }
                 if (!IsValidPostcode(address.PostCode))
                 {
