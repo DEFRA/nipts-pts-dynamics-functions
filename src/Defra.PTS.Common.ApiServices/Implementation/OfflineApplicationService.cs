@@ -11,15 +11,20 @@ namespace Defra.PTS.Common.ApiServices.Implementation
 {
     public class OfflineApplicationServiceOptions
     {
-        public required IApplicationRepository ApplicationRepository { get; set; }
-        public required IOwnerRepository OwnerRepository { get; set; }
-        public required IAddressRepository AddressRepository { get; set; }
-        public required IPetRepository PetRepository { get; set; }
-        public required IUserRepository UserRepository { get; set; }
-        public required ITravelDocumentRepository TravelDocumentRepository { get; set; }
-        public required IdcomsMappingValidator MappingValidator { get; set; }
-        public required IBreedRepository BreedRepository { get; set; }
-        public required ILogger<OfflineApplicationService> Logger { get; set; }
+        public RepositoryGroup Repositories { get; set; } = null!;
+        public IdcomsMappingValidator MappingValidator { get; set; } = null!;
+        public ILogger<OfflineApplicationService> Logger { get; set; } = null!;
+    }
+
+    public class RepositoryGroup
+    {
+        public IApplicationRepository ApplicationRepository { get; set; } = null!;
+        public IOwnerRepository OwnerRepository { get; set; } = null!;
+        public IAddressRepository AddressRepository { get; set; } = null!;
+        public IPetRepository PetRepository { get; set; } = null!;
+        public IUserRepository UserRepository { get; set; } = null!;
+        public ITravelDocumentRepository TravelDocumentRepository { get; set; } = null!;
+        public IBreedRepository BreedRepository { get; set; } = null!;
     }
 
     public class OfflineApplicationService : IOfflineApplicationService
@@ -48,6 +53,7 @@ namespace Defra.PTS.Common.ApiServices.Implementation
             _options = options;
         }
 
+
         public void ProcessOfflineApplication(OfflineApplicationQueueModel queueModel)
         {
             var validationResult = _options.MappingValidator.ValidateMapping(queueModel);
@@ -62,71 +68,119 @@ namespace Defra.PTS.Common.ApiServices.Implementation
             using var scope = new TransactionScope(TransactionScopeOption.Required);
             try
             {
-                _options.Logger.LogInformation(PROCESSING_START_MESSAGE, queueModel.Application.ReferenceNumber);
-
-                var ownerAddress = ProcessAddress(queueModel.OwnerAddress, "Owner");
-                Entity.Address? applicantAddress = null;
-                if (queueModel.ApplicantAddress != null)
-                {
-                    applicantAddress = ProcessAddress(queueModel.ApplicantAddress, "User");
-                }
-
-                var user = ProcessUser(queueModel);
-                if (applicantAddress != null)
-                {
-                    user.AddressId = applicantAddress.Id;
-                    _options.UserRepository.SaveChanges().Wait();
-                }
-
-                var owner = ProcessOwner(queueModel, ownerAddress);
-                var pet = ProcessPet(queueModel);
-                var application = ProcessApplication(queueModel, pet, owner, user, ownerAddress);
-                ProcessTravelDocument(queueModel, application, owner, pet);
-
+                ProcessValidatedApplication(queueModel);
                 scope.Complete();
-                _options.Logger.LogInformation(PROCESSING_COMPLETE_MESSAGE, queueModel.Application.ReferenceNumber);
+            }
+            catch (ValidationException ex)
+            {
+                _options.Logger.LogError(ex, "Validation error processing application {ReferenceNumber}",
+                    queueModel.Application.ReferenceNumber);
+                throw new OfflineApplicationProcessingException(
+                    $"Validation error processing application {queueModel.Application.ReferenceNumber}", ex);
+            }
+            catch (RepositoryException ex)
+            {
+                _options.Logger.LogError(ex, "Repository error processing application {ReferenceNumber}",
+                    queueModel.Application.ReferenceNumber);
+                throw new OfflineApplicationProcessingException(
+                    $"Repository error processing application {queueModel.Application.ReferenceNumber}", ex);
             }
             catch (Exception ex)
             {
-                _options.Logger.LogError(ex, "Error processing application {ReferenceNumber}",
+                _options.Logger.LogError(ex, "Unexpected error processing application {ReferenceNumber}",
                     queueModel.Application.ReferenceNumber);
                 throw new OfflineApplicationProcessingException(
-                    $"Failed to process application {queueModel.Application.ReferenceNumber}", ex);
+                    $"Unexpected error processing application {queueModel.Application.ReferenceNumber}", ex);
             }
         }
 
-        private Entity.User ProcessUser(OfflineApplicationQueueModel queueModel)
+        private void ProcessValidatedApplication(OfflineApplicationQueueModel queueModel)
         {
-            var user = _options.UserRepository.GetUser(queueModel.Applicant.Email).Result;
-            if (user == null)
+            if (queueModel == null) throw new ArgumentNullException(nameof(queueModel));
+            if (queueModel.Application == null) throw new ArgumentNullException(nameof(queueModel.Application));
+
+            _options.Logger.LogInformation(PROCESSING_START_MESSAGE, queueModel.Application.ReferenceNumber);
+
+            var ownerAddress = ProcessAddress(queueModel.OwnerAddress, "Owner");
+            var applicantAddress = ProcessApplicantAddress(queueModel);
+            var user = ProcessUserWithAddress(queueModel, applicantAddress);
+            var owner = ProcessOwner(queueModel, ownerAddress);
+            var pet = ProcessPet(queueModel);
+            var application = ProcessApplication(queueModel, pet, owner, user, ownerAddress);
+            ProcessTravelDocument(queueModel, application, owner, pet);
+
+            _options.Logger.LogInformation(PROCESSING_COMPLETE_MESSAGE, queueModel.Application.ReferenceNumber);
+        }
+
+        private Entity.Address? ProcessApplicantAddress(OfflineApplicationQueueModel queueModel)
+        {
+            if (queueModel == null) throw new ArgumentNullException(nameof(queueModel));
+
+            return queueModel.ApplicantAddress != null
+                ? ProcessAddress(queueModel.ApplicantAddress, "User")
+                : null;
+        }
+
+        private Entity.User ProcessUserWithAddress(OfflineApplicationQueueModel queueModel, Entity.Address? applicantAddress)
+        {
+            if (queueModel == null) throw new ArgumentNullException(nameof(queueModel));
+
+            var user = ProcessUser(queueModel);
+            if (applicantAddress != null)
             {
-                user = new Entity.User
-                {
-                    Id = Guid.NewGuid(),
-                    Email = TruncateString(queueModel.Applicant.Email, MAX_EMAIL_LENGTH),
-                    FullName = TruncateString(queueModel.Applicant.FullName, MAX_NAME_LENGTH),
-                    FirstName = TruncateString(queueModel.Applicant.FirstName, MAX_EMAIL_LENGTH),
-                    LastName = TruncateString(queueModel.Applicant.LastName, MAX_EMAIL_LENGTH),
-                    Telephone = TruncateString(queueModel.Applicant.Telephone ?? string.Empty, MAX_PHONE_LENGTH),
-                    Role = $"{Guid.NewGuid()}:Applicant:3",
-                    ContactId = !string.IsNullOrEmpty(queueModel.Applicant.ContactId) ?
-                        Guid.Parse(queueModel.Applicant.ContactId) : null,
-                    Uniquereference = null,
-                    SignInDateTime = null,
-                    SignOutDateTime = null,
-                    CreatedBy = null,
-                    CreatedOn = DateTime.UtcNow,
-                    UpdatedBy = null,
-                    UpdatedOn = null
-                };
-                _options.UserRepository.Add(user).Wait();
-                _options.UserRepository.SaveChanges().Wait();
+                user.AddressId = applicantAddress.Id;
+                _options.Repositories.UserRepository.SaveChanges().GetAwaiter().GetResult();
             }
             return user;
         }
 
+
+        private Entity.User ProcessUser(OfflineApplicationQueueModel queueModel)
+        {
+            if (queueModel == null) throw new ArgumentNullException(nameof(queueModel));
+            if (queueModel.Applicant == null) throw new ArgumentNullException(nameof(queueModel.Applicant));
+
+            var user = _options.Repositories.UserRepository.GetUser(queueModel.Applicant.Email).GetAwaiter().GetResult();
+            if (user == null)
+            {
+                user = CreateNewUser(queueModel);
+                _options.Repositories.UserRepository.Add(user).GetAwaiter().GetResult();
+                _options.Repositories.UserRepository.SaveChanges().GetAwaiter().GetResult();
+            }
+            return user;
+        }
+
+        private static Entity.User CreateNewUser(OfflineApplicationQueueModel queueModel)
+        {
+            if (queueModel == null) throw new ArgumentNullException(nameof(queueModel));
+            if (queueModel.Applicant == null) throw new ArgumentNullException(nameof(queueModel.Applicant));
+
+            return new Entity.User
+            {
+                Id = Guid.NewGuid(),
+                Email = TruncateString(queueModel.Applicant.Email, MAX_EMAIL_LENGTH),
+                FullName = TruncateString(queueModel.Applicant.FullName, MAX_NAME_LENGTH),
+                FirstName = TruncateString(queueModel.Applicant.FirstName, MAX_EMAIL_LENGTH),
+                LastName = TruncateString(queueModel.Applicant.LastName, MAX_EMAIL_LENGTH),
+                Telephone = TruncateString(queueModel.Applicant.Telephone ?? string.Empty, MAX_PHONE_LENGTH),
+                Role = $"{Guid.NewGuid()}:Applicant:3",
+                ContactId = !string.IsNullOrEmpty(queueModel.Applicant.ContactId) ? Guid.Parse(queueModel.Applicant.ContactId) : (Guid?)null,
+                Uniquereference = null,
+                SignInDateTime = null,
+                SignOutDateTime = null,
+                CreatedBy = null,
+                CreatedOn = DateTime.UtcNow,
+                UpdatedBy = null,
+                UpdatedOn = null
+            };
+        }
+
+
         private Entity.Address ProcessAddress(AddressInfo address, string addressType)
         {
+            if (address == null) throw new ArgumentNullException(nameof(address));
+            if (string.IsNullOrEmpty(addressType)) throw new ArgumentException("Address type cannot be null or empty", nameof(addressType));
+
             var newAddress = new Entity.Address
             {
                 Id = Guid.NewGuid(),
@@ -144,13 +198,17 @@ namespace Defra.PTS.Common.ApiServices.Implementation
                 UpdatedOn = null
             };
 
-            _options.AddressRepository.Add(newAddress).Wait();
-            _options.AddressRepository.SaveChanges().Wait();
+            _options.Repositories.AddressRepository.Add(newAddress).GetAwaiter().GetResult();
+            _options.Repositories.AddressRepository.SaveChanges().GetAwaiter().GetResult();
             return newAddress;
         }
 
         private Entity.Owner ProcessOwner(OfflineApplicationQueueModel queueModel, Entity.Address ownerAddress)
         {
+            if (queueModel == null) throw new ArgumentNullException(nameof(queueModel));
+            if (queueModel.Owner == null) throw new ArgumentNullException(nameof(queueModel.Owner));
+            if (ownerAddress == null) throw new ArgumentNullException(nameof(ownerAddress));
+
             var owner = new Entity.Owner
             {
                 Id = Guid.NewGuid(),
@@ -166,19 +224,47 @@ namespace Defra.PTS.Common.ApiServices.Implementation
                 UpdatedOn = null
             };
 
-            _options.OwnerRepository.Add(owner).Wait();
-            _options.OwnerRepository.SaveChanges().Wait();
+            _options.Repositories.OwnerRepository.Add(owner).GetAwaiter().GetResult();
+            _options.Repositories.OwnerRepository.SaveChanges().GetAwaiter().GetResult();
             return owner;
         }
 
+
         private Entity.Application ProcessApplication(
+    OfflineApplicationQueueModel queueModel,
+    Entity.Pet pet,
+    Entity.Owner owner,
+    Entity.User user,
+    Entity.Address ownerAddress)
+        {
+            if (queueModel == null) throw new ArgumentNullException(nameof(queueModel));
+            if (queueModel.Application == null) throw new ArgumentNullException(nameof(queueModel.Application));
+            if (pet == null) throw new ArgumentNullException(nameof(pet));
+            if (owner == null) throw new ArgumentNullException(nameof(owner));
+            if (user == null) throw new ArgumentNullException(nameof(user));
+            if (ownerAddress == null) throw new ArgumentNullException(nameof(ownerAddress));
+
+            var application = CreateApplication(queueModel, pet, owner, user, ownerAddress);
+            _options.Repositories.ApplicationRepository.Add(application).GetAwaiter().GetResult();
+            _options.Repositories.ApplicationRepository.SaveChanges().GetAwaiter().GetResult();
+            return application;
+        }
+
+        private Entity.Application CreateApplication(
             OfflineApplicationQueueModel queueModel,
             Entity.Pet pet,
             Entity.Owner owner,
             Entity.User user,
             Entity.Address ownerAddress)
         {
-            var application = new Entity.Application
+            if (queueModel == null) throw new ArgumentNullException(nameof(queueModel));
+            if (queueModel.Application == null) throw new ArgumentNullException(nameof(queueModel.Application));
+            if (pet == null) throw new ArgumentNullException(nameof(pet));
+            if (owner == null) throw new ArgumentNullException(nameof(owner));
+            if (user == null) throw new ArgumentNullException(nameof(user));
+            if (ownerAddress == null) throw new ArgumentNullException(nameof(ownerAddress));
+
+            return new Entity.Application
             {
                 Id = Guid.NewGuid(),
                 PetId = pet.Id,
@@ -202,19 +288,37 @@ namespace Defra.PTS.Common.ApiServices.Implementation
                 UpdatedBy = null,
                 UpdatedOn = null
             };
-
-            _options.ApplicationRepository.Add(application).Wait();
-            _options.ApplicationRepository.SaveChanges().Wait();
-            return application;
         }
 
+
         private void ProcessTravelDocument(
+     OfflineApplicationQueueModel queueModel,
+     Entity.Application application,
+     Entity.Owner owner,
+     Entity.Pet pet)
+        {
+            if (queueModel == null) throw new ArgumentNullException(nameof(queueModel));
+            if (application == null) throw new ArgumentNullException(nameof(application));
+            if (owner == null) throw new ArgumentNullException(nameof(owner));
+            if (pet == null) throw new ArgumentNullException(nameof(pet));
+
+            var travelDocument = CreateTravelDocument(queueModel, application, owner, pet);
+            _options.Repositories.TravelDocumentRepository.Add(travelDocument).GetAwaiter().GetResult();
+            _options.Repositories.TravelDocumentRepository.SaveChanges().GetAwaiter().GetResult();
+        }
+
+        private Entity.TravelDocument CreateTravelDocument(
             OfflineApplicationQueueModel queueModel,
             Entity.Application application,
             Entity.Owner owner,
             Entity.Pet pet)
         {
-            var travelDocument = new Entity.TravelDocument
+            if (queueModel == null) throw new ArgumentNullException(nameof(queueModel));
+            if (application == null) throw new ArgumentNullException(nameof(application));
+            if (owner == null) throw new ArgumentNullException(nameof(owner));
+            if (pet == null) throw new ArgumentNullException(nameof(pet));
+
+            return new Entity.TravelDocument
             {
                 Id = Guid.NewGuid(),
                 ApplicationId = application.Id,
@@ -234,40 +338,64 @@ namespace Defra.PTS.Common.ApiServices.Implementation
                 UpdatedBy = null,
                 UpdatedOn = null
             };
-
-            _options.TravelDocumentRepository.Add(travelDocument).Wait();
-            _options.TravelDocumentRepository.SaveChanges().Wait();
         }
+
 
         private Entity.Pet ProcessPet(OfflineApplicationQueueModel queueModel)
         {
-            int? finalBreedId;
-            string? additionalBreedInfo = null;
+            if (queueModel == null) throw new ArgumentNullException(nameof(queueModel));
+            if (queueModel.Pet == null) throw new ArgumentNullException(nameof(queueModel.Pet));
+
+            (int? finalBreedId, string additionalBreedInfo) = DeterminePetBreed(queueModel);
+            string otherColour = DeterminePetColor(queueModel) ?? string.Empty;
+
+            var pet = CreatePet(queueModel, finalBreedId, additionalBreedInfo, otherColour);
+            _options.Repositories.PetRepository.Add(pet).GetAwaiter().GetResult();
+            _options.Repositories.PetRepository.SaveChanges().GetAwaiter().GetResult();
+            return pet;
+        }
+
+        private (int? breedId, string additionalInfo) DeterminePetBreed(OfflineApplicationQueueModel queueModel)
+        {
+            if (queueModel == null) throw new ArgumentNullException(nameof(queueModel));
+            if (queueModel.Pet == null) throw new ArgumentNullException(nameof(queueModel.Pet));
 
             if (queueModel.Pet.BreedId == MIXED_BREED_ID || queueModel.Pet.BreedId == UNKNOWN_BREED_ID)
             {
-                finalBreedId = queueModel.Pet.BreedId;
-                additionalBreedInfo = queueModel.Pet.AdditionalInfoMixedBreedOrUnknown;
-            }
-            else
-            {
-                var breed = _options.BreedRepository.FindById(queueModel.Pet.BreedId).Result;
-                if (breed == null)
-                {
-                    throw new OfflineApplicationProcessingException($"Invalid breed id: {queueModel.Pet.BreedId}");
-                }
-                finalBreedId = breed.Id;
+                return (queueModel.Pet.BreedId, queueModel.Pet.AdditionalInfoMixedBreedOrUnknown ?? string.Empty);
             }
 
-            string? otherColour = null;
-            if (queueModel.Pet.ColourId == OTHER_COLOR_ID_1 ||
-                queueModel.Pet.ColourId == OTHER_COLOR_ID_2 ||
-                queueModel.Pet.ColourId == OTHER_COLOR_ID_3)
+            var breed = _options.Repositories.BreedRepository.FindById(queueModel.Pet.BreedId).GetAwaiter().GetResult();
+            if (breed == null)
             {
-                otherColour = TruncateString(queueModel.Pet.OtherColour, MAX_NAME_LENGTH);
+                throw new OfflineApplicationProcessingException($"Invalid breed id: {queueModel.Pet.BreedId}");
             }
+            return (breed.Id, string.Empty);
+        }
 
-            var pet = new Entity.Pet
+        private static string DeterminePetColor(OfflineApplicationQueueModel queueModel)
+        {
+            if (queueModel == null) throw new ArgumentNullException(nameof(queueModel));
+            if (queueModel.Pet == null) throw new ArgumentNullException(nameof(queueModel.Pet));
+
+            return (queueModel.Pet.ColourId == OTHER_COLOR_ID_1 ||
+                    queueModel.Pet.ColourId == OTHER_COLOR_ID_2 ||
+                    queueModel.Pet.ColourId == OTHER_COLOR_ID_3)
+                ? TruncateString(queueModel.Pet.OtherColour ?? string.Empty, MAX_NAME_LENGTH)
+                : string.Empty;
+        }
+
+
+        private Entity.Pet CreatePet(
+      OfflineApplicationQueueModel queueModel,
+      int? finalBreedId,
+      string additionalBreedInfo,
+      string otherColour)
+        {
+            if (queueModel == null) throw new ArgumentNullException(nameof(queueModel));
+            if (queueModel.Pet == null) throw new ArgumentNullException(nameof(queueModel.Pet));
+
+            return new Entity.Pet
             {
                 Id = Guid.NewGuid(),
                 IdentificationType = 1,
@@ -284,7 +412,7 @@ namespace Defra.PTS.Common.ApiServices.Implementation
                 MicrochipNumber = TruncateString(queueModel.Pet.MicrochipNumber, MAX_MICROCHIP_LENGTH),
                 MicrochippedDate = queueModel.Pet.MicrochippedDate,
                 AdditionalInfoMixedBreedOrUnknown = finalBreedId == MIXED_BREED_ID || finalBreedId == UNKNOWN_BREED_ID
-                    ? TruncateString(additionalBreedInfo ?? string.Empty, MAX_NAME_LENGTH)
+                    ? TruncateString(additionalBreedInfo, MAX_NAME_LENGTH)
                     : null,
                 HasUniqueFeature = string.IsNullOrEmpty(queueModel.Pet.UniqueFeatureDescription) ? 2 : 1,
                 UniqueFeatureDescription = string.IsNullOrEmpty(queueModel.Pet.UniqueFeatureDescription)
@@ -295,10 +423,6 @@ namespace Defra.PTS.Common.ApiServices.Implementation
                 UpdatedBy = null,
                 UpdatedOn = null
             };
-
-            _options.PetRepository.Add(pet).Wait();
-            _options.PetRepository.SaveChanges().Wait();
-            return pet;
         }
 
         private static string TruncateString(string input, int maxLength)
@@ -307,7 +431,8 @@ namespace Defra.PTS.Common.ApiServices.Implementation
             {
                 return input;
             }
-            return input.Length > maxLength ? input[..maxLength] : input;
+            return input.Length > maxLength ? input.Substring(0, maxLength) : input;
         }
+
     }
 }
