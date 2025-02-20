@@ -26,5 +26,8 @@ namespace Defra.PTS.Common.Entities
         public DateTime? CreatedOn { get; set; }
         public Guid? UpdatedBy { get; set; }
         public DateTime? UpdatedOn { get; set; }
+         public string? DocumentSignedBy { get; set; }
+
+        
     }
 }
