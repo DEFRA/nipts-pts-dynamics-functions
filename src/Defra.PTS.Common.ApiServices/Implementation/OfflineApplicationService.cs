@@ -4,7 +4,6 @@ using Defra.PTS.Common.Models.CustomException;
 using Defra.PTS.Common.Models.Enums;
 using Defra.PTS.Common.Repositories.Interface;
 using Microsoft.Extensions.Logging;
-using System.Text.RegularExpressions;
 using System.Transactions;
 using Entity = Defra.PTS.Common.Entities;
 
@@ -116,7 +115,7 @@ namespace Defra.PTS.Common.ApiServices.Implementation
                 TownOrCity = TruncateString(address.TownOrCity, 250),
                 County = TruncateString(address.County, 100),
                 PostCode = TruncateString(address.PostCode, 20),
-                CountryName = null,
+                CountryName = "United Kingdom", // Set programmatically
                 AddressType = addressType,
                 IsActive = true,
                 CreatedBy = null,
@@ -190,10 +189,10 @@ namespace Defra.PTS.Common.ApiServices.Implementation
         }
 
         private async Task ProcessTravelDocument(
-            OfflineApplicationQueueModel queueModel,
-            Entity.Application application,
-            Entity.Owner owner,
-            Entity.Pet pet)
+    OfflineApplicationQueueModel queueModel,
+    Entity.Application application,
+    Entity.Owner owner,
+    Entity.Pet pet)
         {
             var travelDocument = new Entity.TravelDocument
             {

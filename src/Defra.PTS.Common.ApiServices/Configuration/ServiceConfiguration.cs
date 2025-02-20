@@ -1,8 +1,10 @@
 ﻿
 using Defra.PTS.Common.Repositories.Interface;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Defra.PTS.Common.ApiServices.Configuration
 {
+    [ExcludeFromCodeCoverage]
     public class RepositoryConfiguration
     {
         public required IApplicationRepository ApplicationRepository { get; set; }

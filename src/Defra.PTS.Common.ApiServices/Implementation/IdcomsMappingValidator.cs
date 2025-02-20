@@ -49,7 +49,7 @@ namespace Defra.PTS.Common.ApiServices.Implementation
         {
             return ReferenceNumberRegex().IsMatch(reference);
         }
-        public async Task<ValidationResult> ValidateMapping(OfflineApplicationQueueModel queueModel)
+        public async Task<ValidationResult> ValidateMapping(OfflineApplicationQueueModel? queueModel)
         {
             var result = new ValidationResult();
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(TimeoutDuration));
@@ -303,8 +303,6 @@ namespace Defra.PTS.Common.ApiServices.Implementation
             }
 
             ValidateTravelDocumentReference(model, result);
-            ValidateTravelDocumentDates(model, result);
-            ValidateTravelDocumentAuthority(model, result);
         }
 
         private static void ValidateTravelDocumentReference(OfflineApplicationQueueModel model, ValidationResult result)
@@ -326,23 +324,8 @@ namespace Defra.PTS.Common.ApiServices.Implementation
             }
         }
 
-        private static void ValidateTravelDocumentDates(OfflineApplicationQueueModel model, ValidationResult result)
-        {
-            if (model.Ptd.ValidityEndDate.HasValue && model.Ptd.ValidityStartDate.HasValue &&
-                model.Ptd.ValidityEndDate.Value < model.Ptd.ValidityStartDate.Value)
-            {
-                result.AddError("ValidityEndDate", "Validity end date cannot be before start date");
-            }
-        }
-
-        private static void ValidateTravelDocumentAuthority(OfflineApplicationQueueModel model, ValidationResult result)
-        {
-            if (model.Ptd.IssuingAuthorityId.HasValue && model.Ptd.IssuingAuthorityId.Value <= 0)
-            {
-                result.AddError("IssuingAuthorityId", "Issuing authority ID must be a positive number");
-            }
-        }
-
+      
+       
         private static void ValidateIDCOMSFormat(OfflineApplicationQueueModel model, ValidationResult result)
         {
             ValidateIDCOMSReferenceNumber(model, result);

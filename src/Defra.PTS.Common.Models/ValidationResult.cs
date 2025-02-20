@@ -1,13 +1,13 @@
-﻿
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 
 namespace Defra.PTS.Common.Models
 {
     [ExcludeFromCodeCoverage]
     public class ValidationResult
     {
-        public List<ValidationError> Errors { get; set; } = new List<ValidationError>();
-        public bool IsValid => !Errors.Any();
+        public List<ValidationError> Errors { get; set; } = [];
+
+        public bool IsValid => Errors.Count == 0;
 
         public void AddError(string field, string message)
         {
