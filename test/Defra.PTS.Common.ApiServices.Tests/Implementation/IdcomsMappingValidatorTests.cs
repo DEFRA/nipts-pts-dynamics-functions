@@ -170,7 +170,132 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
             Assert.That(result.Errors.Exists(e => e.Field == "OtherColour"));
         }
 
-       
+       [Test]
+public async Task ValidateMapping_TimeoutInBreedValidation_ReturnsError()
+{
+    var model = CreateValidQueueModel();
+    _breedRepositoryMock.Setup(x => x.FindById(It.IsAny<int>()))
+        .Returns(async () => 
+        {
+            await Task.Delay(31000); 
+            return new Entities.Breed { Id = 1, SpeciesId = 1 };
+        });
+
+    var result = await _validator.ValidateMapping(model);
+
+    Assert.IsFalse(result.IsValid);
+    Assert.That(result.Errors.Exists(e => e.Field == "Timeout"));
+}
+
+[Test]
+public async Task ValidateMapping_InvalidDynamicId_ReturnsError()
+{
+    var model = CreateValidQueueModel();
+    model.Application.DynamicId = "invalid-guid";
+    SetupValidRepositoryResponses();
+
+    var result = await _validator.ValidateMapping(model);
+
+    Assert.IsFalse(result.IsValid);
+    Assert.That(result.Errors.Exists(e => e.Field == "DynamicId"));
+}
+
+[Test]
+public async Task ValidateMapping_AuthorizationDateBeforeApplication_ReturnsError()
+{
+    var model = CreateValidQueueModel();
+    model.Application.DateOfApplication = DateTime.UtcNow;
+    model.Application.DateAuthorised = DateTime.UtcNow.AddDays(-1);
+    SetupValidRepositoryResponses();
+
+    var result = await _validator.ValidateMapping(model);
+
+    Assert.IsFalse(result.IsValid);
+    Assert.That(result.Errors.Exists(e => e.Field == "DateAuthorised"));
+}
+
+[Test]
+public async Task ValidateMapping_MismatchedBreedSpecies_ReturnsError()
+{
+    var model = CreateValidQueueModel();
+    _breedRepositoryMock.Setup(x => x.FindById(It.IsAny<int>()))
+        .ReturnsAsync(new Entities.Breed { Id = 1, SpeciesId = 2 });
+
+    var result = await _validator.ValidateMapping(model);
+
+    Assert.IsFalse(result.IsValid);
+    Assert.That(result.Errors.Exists(e => e.Field == "PetBreedId"));
+}
+
+[Test]
+public async Task ValidateMapping_InvalidApplicantData_ReturnsErrors()
+{
+    var model = CreateValidQueueModel();
+    model.Applicant.FirstName = new string('A', 101);
+    model.Applicant.LastName = new string('B', 101);
+    model.Applicant.Email = INVALID_EMAIL;
+    SetupValidRepositoryResponses();
+
+    var result = await _validator.ValidateMapping(model);
+
+    Assert.IsFalse(result.IsValid);
+    Assert.That(result.Errors.Exists(e => e.Field == "ApplicantFirstName"));
+    Assert.That(result.Errors.Exists(e => e.Field == "ApplicantLastName"));
+    Assert.That(result.Errors.Exists(e => e.Field == "ApplicantEmail"));
+}
+
+[Test]
+public async Task ValidateMapping_MissingTravelDocument_ReturnsError()
+{
+    var model = CreateValidQueueModel();
+    model.Ptd = new PtdInfo(); 
+    SetupValidRepositoryResponses();
+
+    var result = await _validator.ValidateMapping(model);
+
+    Assert.IsFalse(result.IsValid);
+    Assert.That(result.Errors.Exists(e => e.Field == "ReferenceNumber"));
+}
+
+
+        [Test]
+public async Task ValidateMapping_InvalidUniqueFeatureDescription_ReturnsError()
+{
+    var model = CreateValidQueueModel();
+    model.Pet.UniqueFeatureDescription = new string('A', 301);
+    SetupValidRepositoryResponses();
+
+    var result = await _validator.ValidateMapping(model);
+
+    Assert.IsFalse(result.IsValid);
+    Assert.That(result.Errors.Exists(e => e.Field == "UniqueFeatureDescription"));
+}
+
+[Test]
+public async Task ValidateMapping_InvalidApplicationStatus_ReturnsError()
+{
+    var model = CreateValidQueueModel();
+    model.Application.Status = "Pending";
+    SetupValidRepositoryResponses();
+
+    var result = await _validator.ValidateMapping(model);
+
+    Assert.IsFalse(result.IsValid);
+    Assert.That(result.Errors.Exists(e => e.Field == "Status"));
+}
+
+[Test]
+public async Task ValidateMapping_NonMatchingDocumentReference_ReturnsError()
+{
+    var model = CreateValidQueueModel();
+    model.Ptd.DocumentReferenceNumber = "GB87654321";
+    SetupValidRepositoryResponses();
+
+    var result = await _validator.ValidateMapping(model);
+
+    Assert.IsFalse(result.IsValid);
+    Assert.That(result.Errors.Exists(e => e.Field == "ReferenceNumber"));
+}
 
         private static OfflineApplicationQueueModel CreateValidQueueModel()
         {

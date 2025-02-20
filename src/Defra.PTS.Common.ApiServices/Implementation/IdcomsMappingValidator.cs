@@ -27,7 +27,7 @@ namespace Defra.PTS.Common.ApiServices.Implementation
         [GeneratedRegex(@"^\d{15}$")]
         private static partial Regex MicrochipFormatRegex();
 
-        [GeneratedRegex(@"^(GB|AD)\d{8}$", RegexOptions.IgnoreCase)]
+        [GeneratedRegex(@"^(GB)\d{8}$", RegexOptions.IgnoreCase)]
         private static partial Regex ReferenceNumberRegex();
 
         private static bool IsValidPhoneNumber(string phone)
@@ -332,13 +332,12 @@ namespace Defra.PTS.Common.ApiServices.Implementation
             ValidateIDCOMSNames(model, result);
         }
 
-        [GeneratedRegex(@"^(GB|AD)\d{8}$", RegexOptions.IgnoreCase)]
+        [GeneratedRegex(@"^(GB)\d{8}$", RegexOptions.IgnoreCase)]
         private static partial Regex IDCOMSReferenceNumberRegex();
 
         private static void ValidateIDCOMSReferenceNumber(OfflineApplicationQueueModel model, ValidationResult result)
         {
-            if (!(model.Application.ReferenceNumber.StartsWith("GB", StringComparison.OrdinalIgnoreCase) ||
-                  model.Application.ReferenceNumber.StartsWith("AD", StringComparison.OrdinalIgnoreCase)) ||
+            if (!model.Application.ReferenceNumber.StartsWith("GB", StringComparison.OrdinalIgnoreCase) ||
                 !IDCOMSReferenceNumberRegex().IsMatch(model.Application.ReferenceNumber))
             {
                 result.AddError(ReferenceNumberField, "Reference must start with 'GB' or 'AD' followed by 8 digits");

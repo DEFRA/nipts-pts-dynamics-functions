@@ -1,7 +1,10 @@
 ﻿
 
+using System.Diagnostics.CodeAnalysis;
+
 namespace Defra.PTS.Common.Models.CustomException
 {
+    [ExcludeFromCodeCoverageAttribute]
     public class RepositoryException : Exception
     {
         public RepositoryException() { }

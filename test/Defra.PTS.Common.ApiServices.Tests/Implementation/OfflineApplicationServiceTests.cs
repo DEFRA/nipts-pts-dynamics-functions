@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework;
 
-namespace Defra.PTS.Common.Tests.ApiServices
+namespace Defra.PTS.Common.ApiServices.Tests.Implementation
 {
     [TestFixture]
     public class OfflineApplicationServiceTests
@@ -241,7 +241,7 @@ namespace Defra.PTS.Common.Tests.ApiServices
             _userRepositoryMock.Setup(x => x.GetUser(It.IsAny<string>()))
                 .ReturnsAsync((Entities.User?)null);
 
-            // Setup SaveChanges for all repositories
+           
             _addressRepositoryMock.Setup(x => x.SaveChanges()).ReturnsAsync(1);
             _ownerRepositoryMock.Setup(x => x.SaveChanges()).ReturnsAsync(1);
             _petRepositoryMock.Setup(x => x.SaveChanges()).ReturnsAsync(1);
@@ -249,7 +249,7 @@ namespace Defra.PTS.Common.Tests.ApiServices
             _travelDocumentRepositoryMock.Setup(x => x.SaveChanges()).ReturnsAsync(1);
             _userRepositoryMock.Setup(x => x.SaveChanges()).ReturnsAsync(1);
 
-            // Setup Add methods
+            
             _addressRepositoryMock.Setup(x => x.Add(It.IsAny<Entities.Address>())).Returns(Task.CompletedTask);
             _ownerRepositoryMock.Setup(x => x.Add(It.IsAny<Entities.Owner>())).Returns(Task.CompletedTask);
             _petRepositoryMock.Setup(x => x.Add(It.IsAny<Entities.Pet>())).Returns(Task.CompletedTask);
@@ -359,6 +359,7 @@ namespace Defra.PTS.Common.Tests.ApiServices
                 Times.Once);
         }
 
+
         private void SetupForValidValidation()
         {
             _breedRepositoryMock.Setup(x => x.FindById(1))
@@ -367,11 +368,11 @@ namespace Defra.PTS.Common.Tests.ApiServices
             _colourRepositoryMock.Setup(x => x.FindById(1))
                 .ReturnsAsync(new Entities.Colour { Id = 1, Name = "Test Colour", SpeciesId = 1 });
 
-            // Setup all other necessary repository calls
+            
             _userRepositoryMock.Setup(x => x.GetUser(It.IsAny<string>()))
                 .ReturnsAsync((Entities.User?)null);
 
-            // Setup SaveChanges for all repositories
+            
             _addressRepositoryMock.Setup(x => x.SaveChanges()).ReturnsAsync(1);
             _ownerRepositoryMock.Setup(x => x.SaveChanges()).ReturnsAsync(1);
             _petRepositoryMock.Setup(x => x.SaveChanges()).ReturnsAsync(1);
@@ -379,7 +380,7 @@ namespace Defra.PTS.Common.Tests.ApiServices
             _travelDocumentRepositoryMock.Setup(x => x.SaveChanges()).ReturnsAsync(1);
             _userRepositoryMock.Setup(x => x.SaveChanges()).ReturnsAsync(1);
 
-            // Setup Add methods
+            
             _addressRepositoryMock.Setup(x => x.Add(It.IsAny<Entities.Address>())).Returns(Task.CompletedTask);
             _ownerRepositoryMock.Setup(x => x.Add(It.IsAny<Entities.Owner>())).Returns(Task.CompletedTask);
             _petRepositoryMock.Setup(x => x.Add(It.IsAny<Entities.Pet>())).Returns(Task.CompletedTask);
