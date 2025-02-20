@@ -4,6 +4,7 @@ using Defra.PTS.Common.Models.CustomException;
 using Defra.PTS.Dynamics.Functions.Functions;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Newtonsoft.Json;
 using NUnit.Framework;
 
 namespace Defra.PTS.Dynamics.Functions.Tests.Functions
@@ -158,6 +159,91 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
             var ex = Assert.ThrowsAsync<OfflineApplicationProcessingException>(async () =>
                 await _queueReader.ProcessOfflineApplication(validMessage));
             Assert.That(ex!.Message, Does.Contain("Unhandled error"));
+        }
+
+        [Test]
+        public async Task ProcessOfflineApplication_SuccessfulProcessing_LogsSuccess()
+        {
+            var validMessage = "{\"Application\": {\"ReferenceNumber\": \"GB12345678\"}}";
+
+            await _queueReader.ProcessOfflineApplication(validMessage);
+
+            _loggerMock.Verify(log => log.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Successfully processed")),
+                It.IsAny<Exception>(),
+                (Func<It.IsAnyType, Exception?, string>)It.IsAny<object>()),
+            Times.Once);
+        }
+
+       
+        [Test]
+        public void ProcessOfflineApplication_ValidationFailureException_LogsWarning()
+        {
+            var validMessage = "{\"Application\": {\"ReferenceNumber\": \"GB12345678\"}}";
+            _offlineApplicationServiceMock.Setup(service => service.ProcessOfflineApplication(It.IsAny<OfflineApplicationQueueModel>()))
+                .ThrowsAsync(new OfflineApplicationProcessingException("Validation failed for field"));
+
+            Assert.ThrowsAsync<OfflineApplicationProcessingException>(async () =>
+                await _queueReader.ProcessOfflineApplication(validMessage));
+
+            _loggerMock.Verify(log => log.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => true),
+                It.IsAny<Exception>(),
+                (Func<It.IsAnyType, Exception?, string>)It.IsAny<object>()),
+            Times.AtLeastOnce);
+        }
+
+        [Test]
+        public void ProcessOfflineApplication_JsonExceptionWithNullMessage_HandlesGracefully()
+        {
+            _offlineApplicationServiceMock.Setup(service => service.ProcessOfflineApplication(It.IsAny<OfflineApplicationQueueModel>()))
+                .ThrowsAsync(new JsonException());
+
+            Assert.ThrowsAsync<OfflineApplicationProcessingException>(async () =>
+                await _queueReader.ProcessOfflineApplication("invalid"));
+
+            _loggerMock.Verify(log => log.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => true),
+                It.IsAny<Exception>(),
+                (Func<It.IsAnyType, Exception?, string>)It.IsAny<object>()),
+            Times.Once);
+        }
+
+        [Test]
+        public void ProcessOfflineApplication_CompleteProcessingWithAllLogs_VerifyLogSequence()
+        {
+            var sequence = new MockSequence();
+            var validMessage = "{\"Application\": {\"ReferenceNumber\": \"GB12345678\"}}";
+            var logCalls = 0;
+
+            _loggerMock.InSequence(sequence).Setup(log => log.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Starting to process")),
+                It.IsAny<Exception>(),
+                (Func<It.IsAnyType, Exception?, string>)It.IsAny<object>()))
+                .Callback(() => logCalls++);
+
+            _offlineApplicationServiceMock.InSequence(sequence)
+                .Setup(service => service.ProcessOfflineApplication(It.IsAny<OfflineApplicationQueueModel>()))
+                .Returns(Task.CompletedTask);
+
+            _loggerMock.InSequence(sequence).Setup(log => log.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Successfully processed")),
+                It.IsAny<Exception>(),
+                (Func<It.IsAnyType, Exception?, string>)It.IsAny<object>()))
+                .Callback(() => logCalls++);
+
+            Assert.DoesNotThrowAsync(async () => await _queueReader.ProcessOfflineApplication(validMessage));
+            Assert.That(logCalls, Is.EqualTo(2));
         }
     }
 }
