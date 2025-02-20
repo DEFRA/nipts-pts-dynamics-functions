@@ -27,7 +27,7 @@ namespace Defra.PTS.Common.ApiServices.Implementation
         [GeneratedRegex(@"^\d{15}$")]
         private static partial Regex MicrochipFormatRegex();
 
-        [GeneratedRegex(@"^(GB)\d{8}$", RegexOptions.IgnoreCase)]
+        [GeneratedRegex(@"^(GB826AD[0-9A-F]{4}|GB\d{8})$", RegexOptions.IgnoreCase)]
         private static partial Regex ReferenceNumberRegex();
 
         private static bool IsValidPhoneNumber(string phone)
@@ -270,13 +270,13 @@ namespace Defra.PTS.Common.ApiServices.Implementation
 
         private static void ValidateApplicationDates(OfflineApplicationQueueModel model, ValidationResult result)
         {
-            if (model.Application.DateOfApplication > DateTime.UtcNow)
+            if (model.Application.DateOfApplication.Date > DateTime.UtcNow.Date)
             {
                 result.AddError("DateOfApplication", "Application date cannot be in the future");
             }
 
             if (model.Application.DateAuthorised.HasValue &&
-                model.Application.DateAuthorised.Value < model.Application.DateOfApplication)
+                model.Application.DateAuthorised.Value.Date < model.Application.DateOfApplication.Date)
             {
                 result.AddError("DateAuthorised", "Authorization date cannot be before application date");
             }
@@ -332,15 +332,13 @@ namespace Defra.PTS.Common.ApiServices.Implementation
             ValidateIDCOMSNames(model, result);
         }
 
-        [GeneratedRegex(@"^(GB)\d{8}$", RegexOptions.IgnoreCase)]
-        private static partial Regex IDCOMSReferenceNumberRegex();
+
 
         private static void ValidateIDCOMSReferenceNumber(OfflineApplicationQueueModel model, ValidationResult result)
         {
-            if (!model.Application.ReferenceNumber.StartsWith("GB", StringComparison.OrdinalIgnoreCase) ||
-                !IDCOMSReferenceNumberRegex().IsMatch(model.Application.ReferenceNumber))
+            if (!ReferenceNumberRegex().IsMatch(model.Application.ReferenceNumber))
             {
-                result.AddError(ReferenceNumberField, "Reference must start with 'GB' or 'AD' followed by 8 digits");
+                result.AddError(ReferenceNumberField, "Reference number must either be GB followed by 8 digits or GB826AD followed by 4 hexadecimal characters");
             }
         }
 

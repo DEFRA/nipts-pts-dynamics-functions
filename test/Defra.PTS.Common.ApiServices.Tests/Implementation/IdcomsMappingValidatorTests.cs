@@ -12,13 +12,12 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
     {
         private const string VALID_EMAIL = "test@example.com";
         private const string VALID_PHONE = "07123456789";
-        private const string VALID_POSTCODE = "SW1A 1AA";
-        private const string VALID_REFERENCE = "GB12345678";
+        private const string VALID_POSTCODE = "SW1A 1AA";  
+        private const string INVALID_REFERENCE = "12345678";  
         private const string VALID_MICROCHIP = "123456789012345";
         private const string INVALID_EMAIL = "invalid-email";
         private const string INVALID_PHONE = "123";
         private const string INVALID_POSTCODE = "INVALID";
-        private const string INVALID_REFERENCE = "12345678";
         private const string INVALID_MICROCHIP = "123";
 
         private Mock<ILogger<IdcomsMappingValidator>> _loggerMock = null!;
@@ -26,6 +25,7 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
         private Mock<IColourRepository> _colourRepositoryMock = null!;
         private IdcomsMappingValidator _validator = null!;
 
+        private const string VALID_GB_REFERENCE = "GB12345678";
 
         [SetUp]
         public void Setup()
@@ -56,13 +56,10 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
         [Test]
         public async Task ValidateMapping_ValidModel_ReturnsSuccess()
         {
-
-            var model = CreateValidQueueModel();
+            var model = CreateValidQueueModel(); 
             SetupValidRepositoryResponses();
 
-
             var result = await _validator.ValidateMapping(model);
-
 
             Assert.IsTrue(result.IsValid);
             Assert.That(result.Errors, Has.Count.EqualTo(0));
@@ -108,14 +105,11 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
         [Test]
         public async Task ValidateMapping_InvalidReferenceNumber_ReturnsErrors()
         {
-
             var model = CreateValidQueueModel();
-            model.Application.ReferenceNumber = INVALID_REFERENCE;
+            model.Application.ReferenceNumber = INVALID_REFERENCE; 
             SetupValidRepositoryResponses();
 
-
             var result = await _validator.ValidateMapping(model);
-
 
             Assert.IsFalse(result.IsValid);
             Assert.That(result.Errors.Exists(e => e.Field == "ReferenceNumber"));
@@ -205,7 +199,7 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
         {
             var model = CreateValidQueueModel();
             model.Application.DateOfApplication = DateTime.UtcNow;
-            model.Application.DateAuthorised = DateTime.UtcNow.AddDays(-1);
+            model.Application.DateAuthorised = DateTime.UtcNow.AddDays(-1);  
             SetupValidRepositoryResponses();
 
             var result = await _validator.ValidateMapping(model);
@@ -288,7 +282,7 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
         public async Task ValidateMapping_NonMatchingDocumentReference_ReturnsError()
         {
             var model = CreateValidQueueModel();
-            model.Ptd.DocumentReferenceNumber = "GB87654321";
+            model.Ptd.DocumentReferenceNumber = "GB87654321";  
             SetupValidRepositoryResponses();
 
             var result = await _validator.ValidateMapping(model);
@@ -443,6 +437,61 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
             Assert.That(result.Errors.Exists(e => e.Field == "MicrochippedDate"));
         }
 
+        [Test]
+        public async Task ValidateMapping_AssistedDigitalReferenceNumber_ReturnsSuccess()
+        {
+            var model = CreateValidQueueModel();
+            model.Application.ReferenceNumber = "GB826AD1F2E";
+            model.Ptd.DocumentReferenceNumber = "GB826AD1F2E";
+            SetupValidRepositoryResponses();
+
+            var result = await _validator.ValidateMapping(model);
+
+            Assert.IsTrue(result.IsValid);
+        }
+
+        [Test]
+        public async Task ValidateMapping_InvalidAssistedDigitalReferenceNumberTooLong_ReturnsError()
+        {
+            var model = CreateValidQueueModel();
+            model.Application.ReferenceNumber = "GB826AD12345"; 
+            model.Ptd.DocumentReferenceNumber = "GB826AD12345";
+            SetupValidRepositoryResponses();
+
+            var result = await _validator.ValidateMapping(model);
+
+            Assert.IsFalse(result.IsValid);
+            Assert.That(result.Errors.Exists(e => e.Field == "ReferenceNumber"));
+        }
+
+        [Test]
+        public async Task ValidateMapping_InvalidAssistedDigitalReferenceNumberNonHex_ReturnsError()
+        {
+            var model = CreateValidQueueModel();
+            model.Application.ReferenceNumber = "GB826ADGHIJ"; 
+            model.Ptd.DocumentReferenceNumber = "GB826ADGHIJ";
+            SetupValidRepositoryResponses();
+
+            var result = await _validator.ValidateMapping(model);
+
+            Assert.IsFalse(result.IsValid);
+            Assert.That(result.Errors.Exists(e => e.Field == "ReferenceNumber"));
+        }
+
+        [Test]
+        public async Task ValidateMapping_AuthorizationDateSameAsApplicationDate_ReturnsSuccess()
+        {
+            var model = CreateValidQueueModel();
+            var baseDate = DateTime.UtcNow.Date;
+            model.Application.DateOfApplication = baseDate.AddHours(9);  
+            model.Application.DateAuthorised = baseDate.AddHours(17);   
+            SetupValidRepositoryResponses();
+
+            var result = await _validator.ValidateMapping(model);
+
+            Assert.IsTrue(result.IsValid);
+        }
+
         private static OfflineApplicationQueueModel CreateValidQueueModel()
         {
             return new OfflineApplicationQueueModel
@@ -465,10 +514,10 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
                 },
                 Application = new ApplicationInfo
                 {
-                    ReferenceNumber = VALID_REFERENCE,
+                    ReferenceNumber = VALID_GB_REFERENCE,
                     Status = "Authorised",
-                    DateOfApplication = DateTime.UtcNow.AddDays(-1),
-                    DateAuthorised = DateTime.UtcNow
+                    DateOfApplication = DateTime.UtcNow.Date.AddHours(-1),
+                    DateAuthorised = DateTime.UtcNow.Date
                 },
                 OwnerAddress = new AddressInfo
                 {
@@ -478,7 +527,7 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
                 },
                 Ptd = new PtdInfo
                 {
-                    DocumentReferenceNumber = VALID_REFERENCE
+                    DocumentReferenceNumber = VALID_GB_REFERENCE
                 },
                 ApplicantAddress = new AddressInfo
                 {
@@ -490,8 +539,11 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
                 {
                     FullName = "Test Applicant",
                     Email = VALID_EMAIL,
-                    Telephone = VALID_PHONE
-                }
+                    Telephone = VALID_PHONE,
+                    FirstName = "Test",
+                    LastName = "Applicant"
+                },
+                CreatedBy = Guid.NewGuid()
             };
         }
 
