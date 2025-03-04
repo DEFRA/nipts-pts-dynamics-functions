@@ -1,12 +1,10 @@
 ﻿using Defra.PTS.Common.ApiServices.Implementation;
 using Defra.PTS.Common.ApiServices.Interface;
+using Defra.PTS.Common.Repositories.Implementation;
+using Defra.PTS.Common.Repositories.Interface;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
+using Microsoft.Extensions.Logging;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Defra.PTS.Dynamics.Functions.Configuration
 {
@@ -15,12 +13,39 @@ namespace Defra.PTS.Dynamics.Functions.Configuration
     {
         public static IServiceCollection AddDefraApiServices(this IServiceCollection services)
         {
+            services.AddScoped<IdcomsMappingValidator>();
+            services.AddScoped<IIdcomsMappingValidator, IdcomsMappingValidator>();
+
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IOwnerService, OwnerService>();
             services.AddScoped<IDynamicsService, DynamicsService>();
             services.AddScoped<IKeyVaultAccess, KeyVaultAccess>();
             services.AddScoped<IApplicationService, ApplicationService>();
             services.AddScoped<IServiceBusService, ServiceBusService>();
+
+            services.AddScoped<IApplicationRepository, ApplicationRepository>();
+            services.AddScoped<IOwnerRepository, OwnerRepository>();
+            services.AddScoped<IAddressRepository, AddressRepository>();
+            services.AddScoped<IPetRepository, PetRepository>();
+            services.AddScoped<IUserRepository, UserRepository>();
+            services.AddScoped<ITravelDocumentRepository, TravelDocumentRepository>();
+            services.AddScoped<IBreedRepository, BreedRepository>();
+
+            services.AddScoped(sp => new OfflineApplicationServiceOptions
+            {
+                ApplicationRepository = sp.GetRequiredService<IApplicationRepository>(),
+                OwnerRepository = sp.GetRequiredService<IOwnerRepository>(),
+                AddressRepository = sp.GetRequiredService<IAddressRepository>(),
+                PetRepository = sp.GetRequiredService<IPetRepository>(),
+                UserRepository = sp.GetRequiredService<IUserRepository>(),
+                TravelDocumentRepository = sp.GetRequiredService<ITravelDocumentRepository>(),
+                MappingValidator = sp.GetRequiredService<IdcomsMappingValidator>(),
+                BreedRepository = sp.GetRequiredService<IBreedRepository>(),
+                Logger = sp.GetRequiredService<ILogger<OfflineApplicationService>>()
+            });
+
+            services.AddScoped<IOfflineApplicationService, OfflineApplicationService>();
+
             return services;
         }
     }
