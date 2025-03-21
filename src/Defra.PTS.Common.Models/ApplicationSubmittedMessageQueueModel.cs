@@ -11,5 +11,6 @@ namespace Defra.PTS.Common.Models
     public class ApplicationSubmittedMessageQueueModel
     {
         public Guid ApplicationId { get; set; }
+        public int ApplicationLanguage { get; set; }
     }
 }
