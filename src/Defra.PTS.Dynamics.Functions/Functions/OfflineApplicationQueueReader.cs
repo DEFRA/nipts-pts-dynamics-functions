@@ -1,5 +1,4 @@
 using System;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Defra.PTS.Common.ApiServices.Interface;
 using Defra.PTS.Common.Models;
@@ -10,7 +9,7 @@ using Newtonsoft.Json;
 
 namespace Defra.PTS.Dynamics.Functions.Functions
 {
-    public partial class OfflineApplicationQueueReader(IOfflineApplicationService offlineApplicationService, ILogger<OfflineApplicationQueueReader> logger)
+    public class OfflineApplicationQueueReader(IOfflineApplicationService offlineApplicationService, ILogger<OfflineApplicationQueueReader> logger)
     {
         private readonly IOfflineApplicationService _offlineApplicationService = offlineApplicationService;
         private readonly ILogger<OfflineApplicationQueueReader> _logger = logger;
@@ -64,37 +63,22 @@ namespace Defra.PTS.Dynamics.Functions.Functions
                 return null;
             }
 
-            bool isIdcomsMessage = IsIdcomsMessage(offlineApplication);
-
-            if (isIdcomsMessage)
+            
+            if (offlineApplication.Owner != null && string.IsNullOrEmpty(offlineApplication.Owner.Email))
             {
-                if (string.IsNullOrEmpty(offlineApplication.Owner?.Email))
-                {
-                    offlineApplication.Owner.Email = "ad.dummy.user@example.com";
-                    _logger.LogInformation("Set default email for IDCOMS owner with reference: {Reference}",
-                        offlineApplication.Application?.ReferenceNumber);
-                }
+                offlineApplication.Owner.Email = "ad.dummy.user@example.com";
+                _logger.LogInformation("Set default email for owner with reference: {Reference}",
+                    offlineApplication.Application?.ReferenceNumber);
+            }
 
-                if (string.IsNullOrEmpty(offlineApplication.Applicant?.Email))
-                {
-                    offlineApplication.Applicant.Email = "ad.dummy.user@example.com";
-                    _logger.LogInformation("Set default email for IDCOMS applicant with reference: {Reference}",
-                        offlineApplication.Application?.ReferenceNumber);
-                }
+            if (offlineApplication.Applicant != null && string.IsNullOrEmpty(offlineApplication.Applicant.Email))
+            {
+                offlineApplication.Applicant.Email = "ad.dummy.user@example.com";
+                _logger.LogInformation("Set default email for applicant with reference: {Reference}",
+                    offlineApplication.Application?.ReferenceNumber);
             }
 
             return offlineApplication;
-        }
-
-        [GeneratedRegex(@"^(GB826AD[0-9A-F]{4}|GB\d{8})$", RegexOptions.IgnoreCase)]
-        private static partial Regex IdcomsRegex();
-
-        private static bool IsIdcomsMessage(OfflineApplicationQueueModel model)
-        {
-            if (model?.Application?.ReferenceNumber == null)
-                return false;
-
-            return IdcomsRegex().IsMatch(model.Application.ReferenceNumber);
         }
 
         private async Task ProcessApplication(OfflineApplicationQueueModel offlineApplication)
