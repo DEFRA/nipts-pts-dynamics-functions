@@ -62,6 +62,22 @@ namespace Defra.PTS.Dynamics.Functions.Functions
                 _logger.LogWarning("Failed to deserialize message to OfflineApplicationQueueModel: {Message}", queueMessage);
                 return null;
             }
+
+            
+            if (offlineApplication.Owner != null && string.IsNullOrEmpty(offlineApplication.Owner.Email))
+            {
+                offlineApplication.Owner.Email = "ad.dummy.user@example.com";
+                _logger.LogInformation("Set default email for owner with reference: {Reference}",
+                    offlineApplication.Application?.ReferenceNumber);
+            }
+
+            if (offlineApplication.Applicant != null && string.IsNullOrEmpty(offlineApplication.Applicant.Email))
+            {
+                offlineApplication.Applicant.Email = "ad.dummy.user@example.com";
+                _logger.LogInformation("Set default email for applicant with reference: {Reference}",
+                    offlineApplication.Application?.ReferenceNumber);
+            }
+
             return offlineApplication;
         }
 

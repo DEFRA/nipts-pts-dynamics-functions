@@ -245,5 +245,122 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
             Assert.DoesNotThrowAsync(async () => await _queueReader.ProcessOfflineApplication(validMessage));
             Assert.That(logCalls, Is.EqualTo(2));
         }
+
+        [Test]
+        public async Task ProcessOfflineApplication_MessageWithEmptyEmails_SetsDefaultEmail()
+        {
+            var message = JsonConvert.SerializeObject(new OfflineApplicationQueueModel
+            {
+                Application = new ApplicationInfo { ReferenceNumber = "GB826AD004A" },
+                Owner = new OwnerInfo { Email = "" },
+                Applicant = new ApplicantInfo { Email = "" }
+            });
+
+            await _queueReader.ProcessOfflineApplication(message);
+
+            _offlineApplicationServiceMock.Verify(service =>
+                service.ProcessOfflineApplication(It.Is<OfflineApplicationQueueModel>(model =>
+                    model.Owner.Email == "ad.dummy.user@example.com" &&
+                    model.Applicant.Email == "ad.dummy.user@example.com")),
+                Times.Once);
+
+            _loggerMock.Verify(log => log.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Set default email for owner with reference")),
+                It.IsAny<Exception>(),
+                (Func<It.IsAnyType, Exception?, string>)It.IsAny<object>()),
+            Times.Once);
+
+            _loggerMock.Verify(log => log.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Set default email for applicant with reference")),
+                It.IsAny<Exception>(),
+                (Func<It.IsAnyType, Exception?, string>)It.IsAny<object>()),
+            Times.Once);
+        }
+
+        [Test]
+        public async Task ProcessOfflineApplication_IdcomsMessageWithValidEmails_DoesNotChangeEmails()
+        {
+            var originalOwnerEmail = "owner@example.com";
+            var originalApplicantEmail = "applicant@example.com";
+
+            var idcomsMessage = JsonConvert.SerializeObject(new OfflineApplicationQueueModel
+            {
+                Application = new ApplicationInfo { ReferenceNumber = "GB826AD004A" },
+                Owner = new OwnerInfo { Email = originalOwnerEmail },
+                Applicant = new ApplicantInfo { Email = originalApplicantEmail }
+            });
+
+            await _queueReader.ProcessOfflineApplication(idcomsMessage);
+
+            _offlineApplicationServiceMock.Verify(service =>
+                service.ProcessOfflineApplication(It.Is<OfflineApplicationQueueModel>(model =>
+                    model.Owner.Email == originalOwnerEmail &&
+                    model.Applicant.Email == originalApplicantEmail)),
+                Times.Once);
+
+            _loggerMock.Verify(log => log.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Set default email")),
+                It.IsAny<Exception>(),
+                (Func<It.IsAnyType, Exception?, string>)It.IsAny<object>()),
+            Times.Never);
+        }
+
+        [Test]
+        public async Task ProcessOfflineApplication_MessageWithEmptyEmails_AlwaysSetsDefaultEmail()
+        {
+            var message = JsonConvert.SerializeObject(new OfflineApplicationQueueModel
+            {
+                Application = new ApplicationInfo { ReferenceNumber = "INVALID123" },
+                Owner = new OwnerInfo { Email = "" },
+                Applicant = new ApplicantInfo { Email = "" }
+            });
+
+            await _queueReader.ProcessOfflineApplication(message);
+
+            _offlineApplicationServiceMock.Verify(service =>
+                service.ProcessOfflineApplication(It.Is<OfflineApplicationQueueModel>(model =>
+                    model.Owner.Email == "ad.dummy.user@example.com" &&
+                    model.Applicant.Email == "ad.dummy.user@example.com")),
+                Times.Once);
+
+            _loggerMock.Verify(log => log.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Set default email for owner with reference")),
+                It.IsAny<Exception>(),
+                (Func<It.IsAnyType, Exception?, string>)It.IsAny<object>()),
+            Times.Once);
+
+            _loggerMock.Verify(log => log.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Set default email for applicant with reference")),
+                It.IsAny<Exception>(),
+                (Func<It.IsAnyType, Exception?, string>)It.IsAny<object>()),
+            Times.Once);
+        }
+
+
+
+        [Test]
+        public async Task ProcessOfflineApplication_WithEmptyObjects_HandlesGracefully()
+        {
+            var messageWithEmptyObjects = "{\"Application\": {\"ReferenceNumber\": \"GB826AD004A\"}, \"Owner\": {}, \"Applicant\": {}}";
+
+            await _queueReader.ProcessOfflineApplication(messageWithEmptyObjects);
+
+            _offlineApplicationServiceMock.Verify(service =>
+                service.ProcessOfflineApplication(It.Is<OfflineApplicationQueueModel>(model =>
+                    model.Application.ReferenceNumber == "GB826AD004A" &&
+                    model.Owner.Email == "ad.dummy.user@example.com" &&
+                    model.Applicant.Email == "ad.dummy.user@example.com")),
+                Times.Once);
+        }
     }
 }
