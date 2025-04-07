@@ -28,53 +28,76 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
         [Test]
         public async Task ProcessOfflineApplication_ValidMessage_ProcessesSuccessfully()
         {
-            var validMessage = "{\"Application\": {\"ReferenceNumber\": \"GB12345678\"}}";
+            // Arrange
+            var validMessage = JsonConvert.SerializeObject(new OfflineApplicationQueueModel
+            {
+                Application = new ApplicationInfo { ReferenceNumber = "GB12345678" },
+                Ptd = new PtdInfo { DocumentReferenceNumber = "GB826AD004A" }
+            });
 
+            // Act
             await _queueReader.ProcessOfflineApplication(validMessage);
 
+            // Assert
             _offlineApplicationServiceMock.Verify(service => service.ProcessOfflineApplication(It.IsAny<OfflineApplicationQueueModel>()), Times.Once);
         }
 
         [Test]
         public void ProcessOfflineApplication_InvalidJson_ThrowsException()
         {
+            // Arrange
             var invalidMessage = "invalid_json";
 
+            // Act & Assert
             Assert.ThrowsAsync<OfflineApplicationProcessingException>(async () => await _queueReader.ProcessOfflineApplication(invalidMessage));
         }
 
         [Test]
         public async Task ProcessOfflineApplication_EmptyMessage_LogsWarning()
         {
+            // Act
             await _queueReader.ProcessOfflineApplication(string.Empty);
+
+            // Assert
             _loggerMock.Verify(log => log.Log(
                 LogLevel.Warning, It.IsAny<EventId>(), It.IsAny<It.IsAnyType>(), It.IsAny<Exception>(), (Func<It.IsAnyType, Exception?, string>)It.IsAny<object>()), Times.Once);
         }
 
-
         [Test]
         public void ProcessOfflineApplication_ProcessingError_ThrowsException()
         {
-            var validMessage = "{\"Application\": {\"ReferenceNumber\": \"GB12345678\"}}";
+            // Arrange
+            var validMessage = JsonConvert.SerializeObject(new OfflineApplicationQueueModel
+            {
+                Application = new ApplicationInfo { ReferenceNumber = "GB12345678" },
+                Ptd = new PtdInfo { DocumentReferenceNumber = "GB826AD004A" }
+            });
+
             _offlineApplicationServiceMock.Setup(service => service.ProcessOfflineApplication(It.IsAny<OfflineApplicationQueueModel>()))
                 .ThrowsAsync(new OfflineApplicationProcessingException("Processing error"));
 
+            // Act & Assert
             Assert.ThrowsAsync<OfflineApplicationProcessingException>(async () => await _queueReader.ProcessOfflineApplication(validMessage));
         }
 
         [Test]
         public void ProcessOfflineApplication_ValidationError_ThrowsException()
         {
-            
-            var validMessage = "{\"Application\": {\"ReferenceNumber\": \"GB12345678\"}}";
+            // Arrange
+            var validMessage = JsonConvert.SerializeObject(new OfflineApplicationQueueModel
+            {
+                Application = new ApplicationInfo { ReferenceNumber = "GB12345678" },
+                Ptd = new PtdInfo { DocumentReferenceNumber = "GB826AD004A" }
+            });
+
             _offlineApplicationServiceMock.Setup(service => service.ProcessOfflineApplication(It.IsAny<OfflineApplicationQueueModel>()))
                 .ThrowsAsync(new OfflineApplicationProcessingException("Validation failure for application"));
 
-            
+            // Act & Assert
             Assert.ThrowsAsync<OfflineApplicationProcessingException>(async () =>
                 await _queueReader.ProcessOfflineApplication(validMessage));
 
-            
+            // Verify logs
             _loggerMock.Verify(logger => logger.Log(
                 It.Is<LogLevel>(l => l == LogLevel.Information),
                 It.IsAny<EventId>(),
@@ -83,7 +106,6 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
                 (Func<It.IsAnyType, Exception?, string>)It.IsAny<object>()),
             Times.Once);
 
-            
             _loggerMock.Verify(logger => logger.Log(
                 It.Is<LogLevel>(l => l == LogLevel.Error),
                 It.IsAny<EventId>(),
@@ -92,7 +114,6 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
                 (Func<It.IsAnyType, Exception?, string>)It.IsAny<object>()),
             Times.Once);
 
-            
             _loggerMock.Verify(logger => logger.Log(
                 It.Is<LogLevel>(l => l == LogLevel.Error),
                 It.IsAny<EventId>(),
@@ -105,10 +126,10 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
         [Test]
         public void ProcessOfflineApplication_NullMessage_LogsWarning()
         {
-           
+            // Act & Assert
             Assert.DoesNotThrowAsync(async () => await _queueReader.ProcessOfflineApplication(null));
 
-            
+            // Verify logs
             _loggerMock.Verify(logger => logger.Log(
                 It.Is<LogLevel>(l => l == LogLevel.Warning),
                 It.IsAny<EventId>(),
@@ -118,15 +139,13 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
             Times.Once);
         }
 
-
-
-
-
         [Test]
         public void ProcessOfflineApplication_InvalidJsonStructure_ThrowsException()
         {
+            // Arrange
             var invalidMessage = "{malformed json}";
 
+            // Act & Assert
             var ex = Assert.ThrowsAsync<OfflineApplicationProcessingException>(async () =>
                 await _queueReader.ProcessOfflineApplication(invalidMessage));
             Assert.That(ex!.Message, Does.Contain("Invalid message format"));
@@ -135,10 +154,17 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
         [Test]
         public async Task ProcessOfflineApplication_SuccessfulProcessing_LogsInformation()
         {
-            var validMessage = "{\"Application\": {\"ReferenceNumber\": \"GB12345678\"}}";
+            // Arrange
+            var validMessage = JsonConvert.SerializeObject(new OfflineApplicationQueueModel
+            {
+                Application = new ApplicationInfo { ReferenceNumber = "GB12345678" },
+                Ptd = new PtdInfo { DocumentReferenceNumber = "GB826AD004A" }
+            });
 
+            // Act
             await _queueReader.ProcessOfflineApplication(validMessage);
 
+            // Assert
             _loggerMock.Verify(log => log.Log(
                 LogLevel.Information,
                 It.IsAny<EventId>(),
@@ -148,14 +174,20 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
             Times.Once);
         }
 
-
         [Test]
         public void ProcessOfflineApplication_UnexpectedError_ThrowsWithCorrectMessage()
         {
-            var validMessage = "{\"Application\": {\"ReferenceNumber\": \"GB12345678\"}}";
+            // Arrange
+            var validMessage = JsonConvert.SerializeObject(new OfflineApplicationQueueModel
+            {
+                Application = new ApplicationInfo { ReferenceNumber = "GB12345678" },
+                Ptd = new PtdInfo { DocumentReferenceNumber = "GB826AD004A" }
+            });
+
             _offlineApplicationServiceMock.Setup(service => service.ProcessOfflineApplication(It.IsAny<OfflineApplicationQueueModel>()))
                 .ThrowsAsync(new Exception("Unexpected error"));
 
+            // Act & Assert
             var ex = Assert.ThrowsAsync<OfflineApplicationProcessingException>(async () =>
                 await _queueReader.ProcessOfflineApplication(validMessage));
             Assert.That(ex!.Message, Does.Contain("Unhandled error"));
@@ -164,10 +196,17 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
         [Test]
         public async Task ProcessOfflineApplication_SuccessfulProcessing_LogsSuccess()
         {
-            var validMessage = "{\"Application\": {\"ReferenceNumber\": \"GB12345678\"}}";
+            // Arrange
+            var validMessage = JsonConvert.SerializeObject(new OfflineApplicationQueueModel
+            {
+                Application = new ApplicationInfo { ReferenceNumber = "GB12345678" },
+                Ptd = new PtdInfo { DocumentReferenceNumber = "GB826AD004A" }
+            });
 
+            // Act
             await _queueReader.ProcessOfflineApplication(validMessage);
 
+            // Assert
             _loggerMock.Verify(log => log.Log(
                 LogLevel.Information,
                 It.IsAny<EventId>(),
@@ -177,17 +216,24 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
             Times.Once);
         }
 
-       
         [Test]
         public void ProcessOfflineApplication_ValidationFailureException_LogsWarning()
         {
-            var validMessage = "{\"Application\": {\"ReferenceNumber\": \"GB12345678\"}}";
+            // Arrange
+            var validMessage = JsonConvert.SerializeObject(new OfflineApplicationQueueModel
+            {
+                Application = new ApplicationInfo { ReferenceNumber = "GB12345678" },
+                Ptd = new PtdInfo { DocumentReferenceNumber = "GB826AD004A" }
+            });
+
             _offlineApplicationServiceMock.Setup(service => service.ProcessOfflineApplication(It.IsAny<OfflineApplicationQueueModel>()))
                 .ThrowsAsync(new OfflineApplicationProcessingException("Validation failed for field"));
 
+            // Act & Assert
             Assert.ThrowsAsync<OfflineApplicationProcessingException>(async () =>
                 await _queueReader.ProcessOfflineApplication(validMessage));
 
+            // Verify logs
             _loggerMock.Verify(log => log.Log(
                 LogLevel.Warning,
                 It.IsAny<EventId>(),
@@ -200,12 +246,15 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
         [Test]
         public void ProcessOfflineApplication_JsonExceptionWithNullMessage_HandlesGracefully()
         {
+            // Arrange
             _offlineApplicationServiceMock.Setup(service => service.ProcessOfflineApplication(It.IsAny<OfflineApplicationQueueModel>()))
                 .ThrowsAsync(new JsonException());
 
+            // Act & Assert
             Assert.ThrowsAsync<OfflineApplicationProcessingException>(async () =>
                 await _queueReader.ProcessOfflineApplication("invalid"));
 
+            // Verify logs
             _loggerMock.Verify(log => log.Log(
                 LogLevel.Error,
                 It.IsAny<EventId>(),
@@ -218,8 +267,13 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
         [Test]
         public void ProcessOfflineApplication_CompleteProcessingWithAllLogs_VerifyLogSequence()
         {
+            // Arrange
             var sequence = new MockSequence();
-            var validMessage = "{\"Application\": {\"ReferenceNumber\": \"GB12345678\"}}";
+            var validMessage = JsonConvert.SerializeObject(new OfflineApplicationQueueModel
+            {
+                Application = new ApplicationInfo { ReferenceNumber = "GB12345678" },
+                Ptd = new PtdInfo { DocumentReferenceNumber = "GB826AD004A" }
+            });
             var logCalls = 0;
 
             _loggerMock.InSequence(sequence).Setup(log => log.Log(
@@ -242,97 +296,68 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
                 (Func<It.IsAnyType, Exception?, string>)It.IsAny<object>()))
                 .Callback(() => logCalls++);
 
+            // Act & Assert
             Assert.DoesNotThrowAsync(async () => await _queueReader.ProcessOfflineApplication(validMessage));
             Assert.That(logCalls, Is.EqualTo(2));
         }
 
         [Test]
-        public async Task ProcessOfflineApplication_MessageWithEmptyEmails_SetsDefaultEmail()
+        public async Task ProcessOfflineApplication_WithEmptyObjects_HandlesGracefully()
         {
-            var message = JsonConvert.SerializeObject(new OfflineApplicationQueueModel
+            // Arrange
+            var messageWithEmptyObjects = JsonConvert.SerializeObject(new OfflineApplicationQueueModel
             {
                 Application = new ApplicationInfo { ReferenceNumber = "GB826AD004A" },
-                Owner = new OwnerInfo { Email = "" },
-                Applicant = new ApplicantInfo { Email = "" }
+                Ptd = new PtdInfo { DocumentReferenceNumber = "GB826AD004A" },
+                Owner = new OwnerInfo(),
+                Applicant = new ApplicantInfo()
             });
 
-            await _queueReader.ProcessOfflineApplication(message);
+            // Act
+            await _queueReader.ProcessOfflineApplication(messageWithEmptyObjects);
 
+            // Assert
             _offlineApplicationServiceMock.Verify(service =>
                 service.ProcessOfflineApplication(It.Is<OfflineApplicationQueueModel>(model =>
-                    model.Owner.Email == "ad.dummy.user@example.com" &&
-                    model.Applicant.Email == "ad.dummy.user@example.com")),
+                    model.Application.ReferenceNumber == "GB826AD004A" &&
+                    model.Owner.Email == "ad.blank.email.GB826AD004A@example.com" &&
+                    model.Applicant.Email == "ad.blank.email.GB826AD004A@example.com")),
                 Times.Once);
-
-            _loggerMock.Verify(log => log.Log(
-                LogLevel.Information,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Set default email for owner with reference")),
-                It.IsAny<Exception>(),
-                (Func<It.IsAnyType, Exception?, string>)It.IsAny<object>()),
-            Times.Once);
-
-            _loggerMock.Verify(log => log.Log(
-                LogLevel.Information,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Set default email for applicant with reference")),
-                It.IsAny<Exception>(),
-                (Func<It.IsAnyType, Exception?, string>)It.IsAny<object>()),
-            Times.Once);
         }
 
         [Test]
-        public async Task ProcessOfflineApplication_IdcomsMessageWithValidEmails_DoesNotChangeEmails()
+        public async Task ProcessOfflineApplication_StandardizesAllEmailsBasedOnPtdNumber()
         {
+            // Arrange
             var originalOwnerEmail = "owner@example.com";
             var originalApplicantEmail = "applicant@example.com";
+            var ptdReferenceNumber = "GB826AD004A";
 
-            var idcomsMessage = JsonConvert.SerializeObject(new OfflineApplicationQueueModel
+            var message = JsonConvert.SerializeObject(new OfflineApplicationQueueModel
             {
-                Application = new ApplicationInfo { ReferenceNumber = "GB826AD004A" },
+                Application = new ApplicationInfo { ReferenceNumber = "GB12345678" },
+                Ptd = new PtdInfo { DocumentReferenceNumber = ptdReferenceNumber },
                 Owner = new OwnerInfo { Email = originalOwnerEmail },
                 Applicant = new ApplicantInfo { Email = originalApplicantEmail }
             });
 
-            await _queueReader.ProcessOfflineApplication(idcomsMessage);
-
-            _offlineApplicationServiceMock.Verify(service =>
-                service.ProcessOfflineApplication(It.Is<OfflineApplicationQueueModel>(model =>
-                    model.Owner.Email == originalOwnerEmail &&
-                    model.Applicant.Email == originalApplicantEmail)),
-                Times.Once);
-
-            _loggerMock.Verify(log => log.Log(
-                LogLevel.Information,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Set default email")),
-                It.IsAny<Exception>(),
-                (Func<It.IsAnyType, Exception?, string>)It.IsAny<object>()),
-            Times.Never);
-        }
-
-        [Test]
-        public async Task ProcessOfflineApplication_MessageWithEmptyEmails_AlwaysSetsDefaultEmail()
-        {
-            var message = JsonConvert.SerializeObject(new OfflineApplicationQueueModel
-            {
-                Application = new ApplicationInfo { ReferenceNumber = "INVALID123" },
-                Owner = new OwnerInfo { Email = "" },
-                Applicant = new ApplicantInfo { Email = "" }
-            });
-
+            // Act
             await _queueReader.ProcessOfflineApplication(message);
 
+            // Assert
+            var expectedEmail = $"ad.blank.email.{ptdReferenceNumber}@example.com";
+
             _offlineApplicationServiceMock.Verify(service =>
                 service.ProcessOfflineApplication(It.Is<OfflineApplicationQueueModel>(model =>
-                    model.Owner.Email == "ad.dummy.user@example.com" &&
-                    model.Applicant.Email == "ad.dummy.user@example.com")),
+                    model.Owner.Email == expectedEmail &&
+                    model.Applicant.Email == expectedEmail)),
                 Times.Once);
 
+            // Verify logs for both email changes
             _loggerMock.Verify(log => log.Log(
                 LogLevel.Information,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Set default email for owner with reference")),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Set standardized email for owner with document reference")),
                 It.IsAny<Exception>(),
                 (Func<It.IsAnyType, Exception?, string>)It.IsAny<object>()),
             Times.Once);
@@ -340,26 +365,67 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
             _loggerMock.Verify(log => log.Log(
                 LogLevel.Information,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Set default email for applicant with reference")),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Set standardized email for applicant with document reference")),
                 It.IsAny<Exception>(),
                 (Func<It.IsAnyType, Exception?, string>)It.IsAny<object>()),
             Times.Once);
         }
 
+        [Test]
+        public async Task ProcessOfflineApplication_NullPtdDocumentReference_HandlesGracefully()
+        {
+            // Arrange - Message with null PTD document reference
+            var message = JsonConvert.SerializeObject(new OfflineApplicationQueueModel
+            {
+                Application = new ApplicationInfo { ReferenceNumber = "GB12345678" },
+                Ptd = new PtdInfo { DocumentReferenceNumber = string.Empty },
+                Owner = new OwnerInfo { Email = "owner@example.com" },
+                Applicant = new ApplicantInfo { Email = "applicant@example.com" }
+            });
+
+            // Act
+            await _queueReader.ProcessOfflineApplication(message);
+
+            // Assert - Should use empty string for email
+            var expectedEmail = "ad.blank.email.@example.com";
+
+            VerifyProcessedApplication(expectedEmail);
+        }
+
+       
+
+        private void VerifyProcessedApplication(string expectedEmail)
+        {
+            _offlineApplicationServiceMock.Verify(service =>
+                service.ProcessOfflineApplication(It.Is<OfflineApplicationQueueModel>(model =>
+                    model.Owner.Email == expectedEmail &&
+                    model.Applicant.Email == expectedEmail)),
+                Times.Once);
+        }
 
 
         [Test]
-        public async Task ProcessOfflineApplication_WithEmptyObjects_HandlesGracefully()
+        public async Task ProcessOfflineApplication_EmptyStringPtdDocumentReference_HandlesGracefully()
         {
-            var messageWithEmptyObjects = "{\"Application\": {\"ReferenceNumber\": \"GB826AD004A\"}, \"Owner\": {}, \"Applicant\": {}}";
+            // Arrange - Message with empty string PTD document reference
+            var message = JsonConvert.SerializeObject(new OfflineApplicationQueueModel
+            {
+                Application = new ApplicationInfo { ReferenceNumber = "GB12345678" },
+                Ptd = new PtdInfo { DocumentReferenceNumber = "" },
+                Owner = new OwnerInfo { Email = "owner@example.com" },
+                Applicant = new ApplicantInfo { Email = "applicant@example.com" }
+            });
 
-            await _queueReader.ProcessOfflineApplication(messageWithEmptyObjects);
+            // Act
+            await _queueReader.ProcessOfflineApplication(message);
+
+            // Assert - Should use empty string for email
+            var expectedEmail = "ad.blank.email.@example.com";
 
             _offlineApplicationServiceMock.Verify(service =>
                 service.ProcessOfflineApplication(It.Is<OfflineApplicationQueueModel>(model =>
-                    model.Application.ReferenceNumber == "GB826AD004A" &&
-                    model.Owner.Email == "ad.dummy.user@example.com" &&
-                    model.Applicant.Email == "ad.dummy.user@example.com")),
+                    model.Owner.Email == expectedEmail &&
+                    model.Applicant.Email == expectedEmail)),
                 Times.Once);
         }
     }

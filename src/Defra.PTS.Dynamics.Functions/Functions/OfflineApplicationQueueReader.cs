@@ -6,6 +6,7 @@ using Defra.PTS.Common.Models.CustomException;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using System.Text.RegularExpressions;
 
 namespace Defra.PTS.Dynamics.Functions.Functions
 {
@@ -62,20 +63,23 @@ namespace Defra.PTS.Dynamics.Functions.Functions
                 _logger.LogWarning("Failed to deserialize message to OfflineApplicationQueueModel: {Message}", queueMessage);
                 return null;
             }
+                       
+            string documentReferenceNumber = offlineApplication.Ptd?.DocumentReferenceNumber ?? "";
+                        
+            string standardizedEmail = $"ad.blank.email.{documentReferenceNumber}@example.com";
 
-            
-            if (offlineApplication.Owner != null && string.IsNullOrEmpty(offlineApplication.Owner.Email))
+            if (offlineApplication.Owner != null)
             {
-                offlineApplication.Owner.Email = "ad.dummy.user@example.com";
-                _logger.LogInformation("Set default email for owner with reference: {Reference}",
-                    offlineApplication.Application?.ReferenceNumber);
+                offlineApplication.Owner.Email = standardizedEmail;
+                _logger.LogInformation("Set standardized email for owner with document reference: {Reference}",
+                    offlineApplication.Ptd?.DocumentReferenceNumber);
             }
 
-            if (offlineApplication.Applicant != null && string.IsNullOrEmpty(offlineApplication.Applicant.Email))
+            if (offlineApplication.Applicant != null)
             {
-                offlineApplication.Applicant.Email = "ad.dummy.user@example.com";
-                _logger.LogInformation("Set default email for applicant with reference: {Reference}",
-                    offlineApplication.Application?.ReferenceNumber);
+                offlineApplication.Applicant.Email = standardizedEmail;
+                _logger.LogInformation("Set standardized email for applicant with document reference: {Reference}",
+                    offlineApplication.Ptd?.DocumentReferenceNumber);
             }
 
             return offlineApplication;
