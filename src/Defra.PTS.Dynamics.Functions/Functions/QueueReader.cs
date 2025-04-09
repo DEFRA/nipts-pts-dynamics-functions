@@ -16,6 +16,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
+using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Extensions;
 using Microsoft.Azure.WebJobs.ServiceBus;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -134,7 +135,7 @@ namespace Defra.PTS.Dynamics.Functions.Functions
                     throw new QueueReaderException("Invalid Queue Message :" + myQueueItem);
                 }
                 ApplicationUpdateQueueModel currentApplication = JsonConvert.DeserializeObject<ApplicationUpdateQueueModel>(myQueueItem);
-                if (currentApplication == null)
+                if (currentApplication == null || (currentApplication.Id.IsNullOrDefault() && currentApplication.DynamicId.IsNullOrDefault()))
                 {
                     log.LogError("Invalid Object from message : {0}", myQueueItem);
                     throw new QueueReaderException("Invalid Object from message :" + myQueueItem);                    
