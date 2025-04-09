@@ -238,7 +238,7 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
             _applicationRepositoryMock?.Setup(repo => repo.Find(applicationUpdateQueueModel.Id))
                 .ReturnsAsync(new Entities.Application
                 {
-                    Id = applicationUpdateQueueModel.Id,
+                    Id = (Guid)applicationUpdateQueueModel.Id,
                     // Set other properties as needed
                 });
 
