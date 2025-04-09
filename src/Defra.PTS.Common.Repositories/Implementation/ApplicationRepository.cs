@@ -28,12 +28,12 @@ namespace Defra.PTS.Common.Repositories.Implementation
         {
         }
 
-        public async Task<Entity.Application?> GetApplicationById(Guid applicationId)
+        public async Task<Entity.Application?> GetApplicationById(Guid? applicationId)
         {
             return await CommonContext!.Application.FirstOrDefaultAsync(a => a.Id == applicationId);
         }
 
-        public async Task<Entity.Application?> GetApplicationByDynamicId(Guid dynamicId)
+        public async Task<Entity.Application?> GetApplicationByDynamicId(Guid? dynamicId)
         {
             return await CommonContext!.Application.FirstOrDefaultAsync(a => a.DynamicId == dynamicId);
         }

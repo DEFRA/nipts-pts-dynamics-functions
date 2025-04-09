@@ -134,12 +134,14 @@ namespace Defra.PTS.Dynamics.Functions.Functions
                     log.LogError("Invalid Queue Message :", myQueueItem);
                     throw new QueueReaderException("Invalid Queue Message :" + myQueueItem);
                 }
+
                 ApplicationUpdateQueueModel currentApplication = JsonConvert.DeserializeObject<ApplicationUpdateQueueModel>(myQueueItem);
+
                 if (currentApplication == null || (currentApplication.Id.IsNullOrDefault() && currentApplication.DynamicId.IsNullOrDefault()))
                 {
                     log.LogError("Invalid Object from message : {0}", myQueueItem);
-                    throw new QueueReaderException("Invalid Object from message :" + myQueueItem);                    
-                }                
+                    throw new QueueReaderException("Invalid Object from message :" + myQueueItem);
+                }
                 await _applicationService.UpdateApplicationStatus(currentApplication);
         }
     }
