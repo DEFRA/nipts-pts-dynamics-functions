@@ -134,8 +134,7 @@ namespace Defra.PTS.Dynamics.Functions.Functions
                     throw new QueueReaderException("Invalid Queue Message :" + myQueueItem);
                 }
                 ApplicationUpdateQueueModel currentApplication = JsonConvert.DeserializeObject<ApplicationUpdateQueueModel>(myQueueItem);
-                if (currentApplication == null ||
-                   currentApplication.Id == Guid.Empty)
+                if (currentApplication == null)
                 {
                     log.LogError("Invalid Object from message : {0}", myQueueItem);
                     throw new QueueReaderException("Invalid Object from message :" + myQueueItem);                    

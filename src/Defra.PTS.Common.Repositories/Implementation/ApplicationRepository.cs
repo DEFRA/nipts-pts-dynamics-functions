@@ -33,6 +33,11 @@ namespace Defra.PTS.Common.Repositories.Implementation
             return await CommonContext!.Application.FirstOrDefaultAsync(a => a.Id == applicationId);
         }
 
+        public async Task<Entity.Application?> GetApplicationByDynamicId(Guid dynamicId)
+        {
+            return await CommonContext!.Application.FirstOrDefaultAsync(a => a.DynamicId == dynamicId);
+        }
+
         public async Task<bool> PerformHealthCheckLogic()
         {
             // Attempt to open a connection to the database

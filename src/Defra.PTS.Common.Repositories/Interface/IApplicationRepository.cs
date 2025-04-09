@@ -11,6 +11,8 @@ namespace Defra.PTS.Common.Repositories.Interface
     {
         Task<Entity.Application?> GetApplicationById(Guid applicationId);
 
+        Task<Entity.Application?> GetApplicationByDynamicId(Guid dynamicId);
+
         Task<bool> PerformHealthCheckLogic();
     }
 }
