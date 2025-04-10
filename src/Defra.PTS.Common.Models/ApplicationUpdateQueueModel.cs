@@ -7,9 +7,9 @@ namespace Defra.PTS.Common.Models
     public class ApplicationUpdateQueueModel
     {
         [JsonProperty("Application.Id ")]
-        public Guid Id { get; set; }
+        public Guid? Id { get; set; }
         [JsonProperty("Application.DynamicId")]
-        public Guid DynamicId { get; set; }
+        public Guid? DynamicId { get; set; }
         [JsonProperty("Application.StatusId")]
         public string? StatusId { get; set; }
         [JsonProperty("Application.DateAuthorised")]
