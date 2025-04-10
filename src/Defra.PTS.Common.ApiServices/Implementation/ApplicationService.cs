@@ -129,7 +129,7 @@ namespace Defra.PTS.Common.ApiServices.Implementation
             Guid? id = null;
             Guid? applicationId = applicationUpdateQueueModel.Id;
 
-            var application = await _applicationRepository.Find(applicationId);
+            var application = await _applicationRepository.Find(applicationId!);
 
             if (application == null)
             {
