@@ -221,20 +221,23 @@ namespace Defra.PTS.Common.ApiServices.Implementation
 
         private async Task<Entity.Pet> ProcessPet(OfflineApplicationQueueModel queueModel)
         {
-            int? finalBreedId;
+            int? finalBreedId = null;
             string? additionalBreedInfo = null;
-
-            if (queueModel.Pet.BreedId == 99 || queueModel.Pet.BreedId == 100)
+           
+            if (queueModel.Pet.SpeciesId == 3 && !queueModel.Pet.BreedId.HasValue)
+            {
+                finalBreedId = null;
+            }
+            else if (queueModel.Pet.BreedId.HasValue && (queueModel.Pet.BreedId == 99 || queueModel.Pet.BreedId == 100))
             {
                 finalBreedId = queueModel.Pet.BreedId;
                 additionalBreedInfo = queueModel.Pet.AdditionalInfoMixedBreedOrUnknown;
             }
-            else
+            else if (queueModel.Pet.BreedId.HasValue)
             {
-                var breed = await _options.BreedRepository.FindById(queueModel.Pet.BreedId);
+                var breed = await _options.BreedRepository.FindById(queueModel.Pet.BreedId.Value);
                 finalBreedId = breed?.Id ?? throw new OfflineApplicationProcessingException($"Invalid breed id: {queueModel.Pet.BreedId}");
             }
-
 
             string? otherColour = null;
             if (queueModel.Pet.ColourId == 11 || queueModel.Pet.ColourId == 20 || queueModel.Pet.ColourId == 29)
@@ -258,7 +261,7 @@ namespace Defra.PTS.Common.ApiServices.Implementation
                 OtherColour = otherColour,
                 MicrochipNumber = TruncateString(queueModel.Pet.MicrochipNumber, 15),
                 MicrochippedDate = queueModel.Pet.MicrochippedDate,
-                AdditionalInfoMixedBreedOrUnknown = finalBreedId == 99 || finalBreedId == 100
+                AdditionalInfoMixedBreedOrUnknown = (finalBreedId == 99 || finalBreedId == 100)
                     ? TruncateString(additionalBreedInfo ?? string.Empty, 300)
                     : null,
                 HasUniqueFeature = string.IsNullOrEmpty(queueModel.Pet.UniqueFeatureDescription) ? 2 : 1,

@@ -51,7 +51,7 @@ namespace Defra.PTS.Common.Models
         public string MicrochipNumber { get; set; } = string.Empty;
         public DateTime? MicrochippedDate { get; set; }
         public int SpeciesId { get; set; }
-        public int BreedId { get; set; }
+        public int? BreedId { get; set; }
         public int SexId { get; set; }
         public DateTime? DOB { get; set; }
         public int ColourId { get; set; }
