@@ -9,7 +9,9 @@ namespace Defra.PTS.Common.Repositories.Interface
 {
     public interface IApplicationRepository : IRepository<Entity.Application>
     {
-        Task<Entity.Application?> GetApplicationById(Guid applicationId);
+        Task<Entity.Application?> GetApplicationById(Guid? applicationId);
+
+        Task<Entity.Application?> GetApplicationByDynamicId(Guid? dynamicId);
 
         Task<bool> PerformHealthCheckLogic();
     }

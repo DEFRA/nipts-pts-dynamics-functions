@@ -106,9 +106,14 @@ namespace Defra.PTS.Common.ApiServices.Implementation
                 return;
             }
 
-            if (model.Pet.BreedId != 99 && model.Pet.BreedId != 100)
+            if (model.Pet.SpeciesId == 3 && !model.Pet.BreedId.HasValue)
+            {               
+                return;
+            }
+
+            if (model.Pet.BreedId.HasValue && model.Pet.BreedId != 99 && model.Pet.BreedId != 100)
             {
-                var breedTask = _breedRepository.FindById(model.Pet.BreedId);
+                var breedTask = _breedRepository.FindById(model.Pet.BreedId.Value);
                 using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
                 cts.CancelAfter(TimeSpan.FromSeconds(TimeoutDuration));
 

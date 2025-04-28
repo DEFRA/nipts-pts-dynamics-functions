@@ -6,6 +6,7 @@ using Defra.PTS.Common.Models.CustomException;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using System.Text.RegularExpressions;
 
 namespace Defra.PTS.Dynamics.Functions.Functions
 {
@@ -62,6 +63,25 @@ namespace Defra.PTS.Dynamics.Functions.Functions
                 _logger.LogWarning("Failed to deserialize message to OfflineApplicationQueueModel: {Message}", queueMessage);
                 return null;
             }
+                       
+            string documentReferenceNumber = offlineApplication.Ptd?.DocumentReferenceNumber ?? "";
+                        
+            string standardizedEmail = $"ad.blank.email.{documentReferenceNumber}@example.com";
+
+            if (offlineApplication.Owner != null)
+            {
+                offlineApplication.Owner.Email = standardizedEmail;
+                _logger.LogInformation("Set standardized email for owner with document reference: {Reference}",
+                    offlineApplication.Ptd?.DocumentReferenceNumber);
+            }
+
+            if (offlineApplication.Applicant != null)
+            {
+                offlineApplication.Applicant.Email = standardizedEmail;
+                _logger.LogInformation("Set standardized email for applicant with document reference: {Reference}",
+                    offlineApplication.Ptd?.DocumentReferenceNumber);
+            }
+
             return offlineApplication;
         }
 

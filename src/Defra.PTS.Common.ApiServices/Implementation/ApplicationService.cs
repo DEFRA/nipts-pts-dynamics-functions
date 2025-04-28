@@ -127,8 +127,15 @@ namespace Defra.PTS.Common.ApiServices.Implementation
         public async Task<Guid?> UpdateApplicationStatus(ApplicationUpdateQueueModel applicationUpdateQueueModel)
         {
             Guid? id = null;
-            Guid applicationId = applicationUpdateQueueModel.Id;
-            var application = await  _applicationRepository.Find(applicationId);
+            Guid? applicationId = applicationUpdateQueueModel.Id;
+
+            var application = await _applicationRepository.Find(applicationId!);
+
+            if (application == null)
+            {
+                application = await _applicationRepository.GetApplicationByDynamicId(applicationUpdateQueueModel.DynamicId);
+            }
+
             if (application != null)
             {
                 var status = (Models.Enums.Status)Enum.Parse(typeof(Models.Enums.Status), applicationUpdateQueueModel.StatusId!);
