@@ -6,7 +6,7 @@ using Defra.PTS.Common.Models.CustomException;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using System.Text.RegularExpressions;
+
 
 namespace Defra.PTS.Dynamics.Functions.Functions
 {
@@ -63,9 +63,11 @@ namespace Defra.PTS.Dynamics.Functions.Functions
                 _logger.LogWarning("Failed to deserialize message to OfflineApplicationQueueModel: {Message}", queueMessage);
                 return null;
             }
-                       
+
+            CleanupEscapedCharacters(offlineApplication);
+
             string documentReferenceNumber = offlineApplication.Ptd?.DocumentReferenceNumber ?? "";
-                        
+
             string standardizedEmail = $"ad.blank.email.{documentReferenceNumber}@example.com";
 
             if (offlineApplication.Owner != null)
@@ -83,6 +85,76 @@ namespace Defra.PTS.Dynamics.Functions.Functions
             }
 
             return offlineApplication;
+        }
+
+        private void CleanupEscapedCharacters(OfflineApplicationQueueModel model)
+        {
+            if (model.Owner != null)
+            {
+                model.Owner.FullName = CleanupString(model.Owner.FullName);
+                model.Owner.Email = CleanupString(model.Owner.Email);
+                model.Owner.Telephone = CleanupString(model.Owner.Telephone);
+            }
+
+            if (model.Applicant != null)
+            {
+                model.Applicant.FullName = CleanupString(model.Applicant.FullName);
+                model.Applicant.FirstName = CleanupString(model.Applicant.FirstName);
+                model.Applicant.LastName = CleanupString(model.Applicant.LastName);
+                model.Applicant.ContactId = CleanupString(model.Applicant.ContactId);
+                model.Applicant.Email = CleanupString(model.Applicant.Email);
+                model.Applicant.Telephone = CleanupString(model.Applicant.Telephone);
+            }
+
+            if (model.Pet != null)
+            {
+                model.Pet.Name = CleanupString(model.Pet.Name);
+                model.Pet.MicrochipNumber = CleanupString(model.Pet.MicrochipNumber);
+                model.Pet.AdditionalInfoMixedBreedOrUnknown = CleanupString(model.Pet.AdditionalInfoMixedBreedOrUnknown);
+                model.Pet.UniqueFeatureDescription = CleanupString(model.Pet.UniqueFeatureDescription);
+                model.Pet.OtherColour = CleanupString(model.Pet.OtherColour);
+            }
+
+            if (model.Application != null)
+            {
+                model.Application.Status = CleanupString(model.Application.Status);
+                model.Application.ReferenceNumber = CleanupString(model.Application.ReferenceNumber);
+                model.Application.DynamicId = CleanupString(model.Application.DynamicId);
+            }
+
+            if (model.Ptd != null)
+            {
+                model.Ptd.DocumentReferenceNumber = CleanupString(model.Ptd.DocumentReferenceNumber);
+            }
+
+            if (model.OwnerAddress != null)
+            {
+                model.OwnerAddress.AddressLineOne = CleanupString(model.OwnerAddress.AddressLineOne);
+                model.OwnerAddress.AddressLineTwo = CleanupString(model.OwnerAddress.AddressLineTwo);
+                model.OwnerAddress.TownOrCity = CleanupString(model.OwnerAddress.TownOrCity);
+                model.OwnerAddress.County = CleanupString(model.OwnerAddress.County);
+                model.OwnerAddress.PostCode = CleanupString(model.OwnerAddress.PostCode);
+            }
+
+            if (model.ApplicantAddress != null)
+            {
+                model.ApplicantAddress.AddressLineOne = CleanupString(model.ApplicantAddress.AddressLineOne);
+                model.ApplicantAddress.AddressLineTwo = CleanupString(model.ApplicantAddress.AddressLineTwo);
+                model.ApplicantAddress.TownOrCity = CleanupString(model.ApplicantAddress.TownOrCity);
+                model.ApplicantAddress.County = CleanupString(model.ApplicantAddress.County);
+                model.ApplicantAddress.PostCode = CleanupString(model.ApplicantAddress.PostCode);
+            }
+        }
+
+        private static string CleanupString(string input)
+        {
+            if (string.IsNullOrEmpty(input))
+                return input;
+
+            return input
+                .Replace("\\\"", "\"")
+                .Replace("\\/", "/")
+                .Replace("\\\\", "\\");
         }
 
         private async Task ProcessApplication(OfflineApplicationQueueModel offlineApplication)
