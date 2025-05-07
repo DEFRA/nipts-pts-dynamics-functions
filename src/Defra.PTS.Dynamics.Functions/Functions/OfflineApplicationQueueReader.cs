@@ -87,7 +87,8 @@ namespace Defra.PTS.Dynamics.Functions.Functions
             return offlineApplication;
         }
 
-        private void CleanupEscapedCharacters(OfflineApplicationQueueModel model)
+        //Static CleanupEscapedCharacters
+        private static void CleanupEscapedCharacters(OfflineApplicationQueueModel model)
         {
             if (model.Owner != null)
             {
