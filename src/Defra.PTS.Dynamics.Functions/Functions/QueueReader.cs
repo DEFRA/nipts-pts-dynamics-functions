@@ -82,11 +82,14 @@ namespace Defra.PTS.Dynamics.Functions.Functions
             _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
             var applicationObject = await _applicationService.GetApplication(applicationId);
+            
+
             if (applicationObject == null)
             {
                 throw new QueueReaderException("Invalid Data Object so cannot Post to Dynamics");
             }
 
+            applicationObject.NiptsApplicationLanguage = currentApplication.ApplicationLanguage.ToString();
             string jsonData = JsonConvert.SerializeObject(applicationObject);
             log.LogInformation("Request Headers for application: {0} {1} Posting Json Payload: {2}", applicationId.ToString(), _httpClient.DefaultRequestHeaders.ToString(), jsonData);
             StringContent content = new StringContent(jsonData, Encoding.UTF8, "application/json");
