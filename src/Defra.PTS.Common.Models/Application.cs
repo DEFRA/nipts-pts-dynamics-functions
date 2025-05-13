@@ -92,5 +92,8 @@ namespace Defra.PTS.Common.Models
 
         [JsonProperty("nipts_microchippeddate")]
         public string? NiptsMicrochippedDate { get; set; }
+
+        [JsonProperty("nipts_applicationlanguage")]
+        public string? NiptsApplicationLanguage { get; set; }
     }
 }
