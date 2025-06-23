@@ -139,6 +139,26 @@ namespace Defra.PTS.Common.ApiServices.Implementation
             if (application != null)
             {
                 var status = (Models.Enums.Status)Enum.Parse(typeof(Models.Enums.Status), applicationUpdateQueueModel.StatusId!);
+
+                //Check if application is suspended before the update runs
+                if (application.Status == Models.Enums.Status.Suspended.ToString()) 
+                { 
+                    //if the current status is now not suspended, we update the DateUnsuspended
+                    if (status != Models.Enums.Status.Suspended)
+                    {
+                        application.DateUnsuspended = DateTime.Now;
+                    }
+                }
+
+                else
+                {
+                    //if the current status is now suspended, we update the DateSuspended
+                    if (status == Models.Enums.Status.Suspended)
+                    {
+                        application.DateSuspended = DateTime.Now;
+                    }
+                }
+
                 application.DynamicId = applicationUpdateQueueModel.DynamicId;
                 application.Status = status.ToString();
                 application.DateAuthorised = applicationUpdateQueueModel.DateAuthorised;
