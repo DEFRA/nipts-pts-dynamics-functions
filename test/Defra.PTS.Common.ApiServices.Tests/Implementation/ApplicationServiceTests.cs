@@ -286,6 +286,41 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
         }
 
         [Test]
+        public async Task UpdateApplicationStatus_SuspendedWhenApplicationIsAuthorised_ReturnsUpdatedApplicationId()
+        {
+            var dynamicId = Guid.NewGuid();
+            // Arrange
+            var applicationUpdateQueueModel = new Models.ApplicationUpdateQueueModel
+            {
+                Id = Guid.NewGuid(),
+                StatusId = "Suspended",
+                DynamicId = dynamicId,
+                DateAuthorised = DateTime.Now,
+                DateRejected = null,
+                DateRevoked = null
+            };
+
+            _applicationRepositoryMock?.Setup(repo => repo.Find(applicationUpdateQueueModel.Id))
+                .ReturnsAsync(new Entities.Application
+                {
+                    Id = (Guid)applicationUpdateQueueModel.Id,
+                    Status = "Authorised"
+                });
+
+            // Act
+            var result = await sut!.UpdateApplicationStatus(applicationUpdateQueueModel);
+
+            // Assert
+            Assert.IsNotNull(result);
+            Assert.AreEqual(applicationUpdateQueueModel.Id, result);
+
+            // Verify that the Update and SaveChanges methods were called on the mock repository
+            _applicationRepositoryMock?.Verify(repo => repo.Find(applicationUpdateQueueModel.Id), Times.Once);
+            _applicationRepositoryMock?.Verify(repo => repo.Update(It.IsAny<Entities.Application>()), Times.Once);
+            _applicationRepositoryMock?.Verify(repo => repo.SaveChanges(), Times.Once);
+        }
+
+        [Test]
         public async Task PerformHealthCheckLogic_ReturnsTrue()
         {
             // Arrange
