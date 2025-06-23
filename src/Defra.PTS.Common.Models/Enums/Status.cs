@@ -17,5 +17,7 @@ namespace Defra.PTS.Common.Models.Enums
         Revoked = 3,
         [Description("Awaiting Verifictaion")]
         AwaitingVerifictaion = 4,
+        [Description("Suspended")]
+        Suspended = 5,
     }
 }
