@@ -173,6 +173,8 @@ namespace Defra.PTS.Common.ApiServices.Implementation
                 DateAuthorised = queueModel.Application.DateAuthorised ?? DateTime.UtcNow,
                 DateRejected = null,
                 DateRevoked = null,
+                DateSuspended = null,
+                DateUnsuspended = null,
                 DynamicId = Guid.TryParse(queueModel.Application.DynamicId, out var dynamicId) ? dynamicId : null,
                 IsDeclarationSigned = false,
                 IsConsentAgreed = false,

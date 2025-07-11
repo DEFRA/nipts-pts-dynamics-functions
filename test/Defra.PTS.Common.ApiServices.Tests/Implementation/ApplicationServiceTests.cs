@@ -195,12 +195,42 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
             var applicationUpdateQueueModel = new Models.ApplicationUpdateQueueModel
             {
                 Id = Guid.NewGuid(),
-                StatusId = "Authorised", // Replace with actual status ID
+                StatusId = "Authorised",
                 DynamicId = dynamicId,
                 DateAuthorised = DateTime.Now,
                 DateRejected = null,
                 DateRevoked = null
-                // Add other properties as needed
+            };
+
+            Entities.Application? application = null;
+            _applicationRepositoryMock?.Setup(repo => repo.Find(applicationUpdateQueueModel.Id))!
+                .ReturnsAsync(application);
+
+            // Act
+            var result = await sut!.UpdateApplicationStatus(applicationUpdateQueueModel);
+
+            // Assert
+            Assert.IsNull(result);
+
+            // Verify that the Update and SaveChanges methods were called on the mock repository
+            _applicationRepositoryMock?.Verify(repo => repo.Find(applicationUpdateQueueModel.Id), Times.Once);
+            _applicationRepositoryMock?.Verify(repo => repo.Update(It.IsAny<Entities.Application>()), Times.Never);
+            _applicationRepositoryMock?.Verify(repo => repo.SaveChanges(), Times.Never);
+        }
+
+        [Test]
+        public async Task UpdateApplicationStatus_Suspended_ReturnsNullApplicationId()
+        {
+            var dynamicId = Guid.NewGuid();
+            // Arrange
+            var applicationUpdateQueueModel = new Models.ApplicationUpdateQueueModel
+            {
+                Id = Guid.NewGuid(),
+                StatusId = "Suspended",
+                DynamicId = dynamicId,
+                DateAuthorised = DateTime.Now,
+                DateRejected = null,
+                DateRevoked = null
             };
 
             Entities.Application? application = null;
@@ -240,6 +270,76 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
                 {
                     Id = (Guid)applicationUpdateQueueModel.Id,
                     // Set other properties as needed
+                });
+
+            // Act
+            var result = await sut!.UpdateApplicationStatus(applicationUpdateQueueModel);
+
+            // Assert
+            Assert.IsNotNull(result);
+            Assert.AreEqual(applicationUpdateQueueModel.Id, result);
+
+            // Verify that the Update and SaveChanges methods were called on the mock repository
+            _applicationRepositoryMock?.Verify(repo => repo.Find(applicationUpdateQueueModel.Id), Times.Once);
+            _applicationRepositoryMock?.Verify(repo => repo.Update(It.IsAny<Entities.Application>()), Times.Once);
+            _applicationRepositoryMock?.Verify(repo => repo.SaveChanges(), Times.Once);
+        }
+
+        [Test]
+        public async Task UpdateApplicationStatus_SuspendedWhenApplicationWasAuthorised_ReturnsUpdatedApplicationId()
+        {
+            var dynamicId = Guid.NewGuid();
+            // Arrange
+            var applicationUpdateQueueModel = new Models.ApplicationUpdateQueueModel
+            {
+                Id = Guid.NewGuid(),
+                StatusId = "Suspended",
+                DynamicId = dynamicId,
+                DateAuthorised = DateTime.Now,
+                DateRejected = null,
+                DateRevoked = null
+            };
+
+            _applicationRepositoryMock?.Setup(repo => repo.Find(applicationUpdateQueueModel.Id))
+                .ReturnsAsync(new Entities.Application
+                {
+                    Id = (Guid)applicationUpdateQueueModel.Id,
+                    Status = "Authorised"
+                });
+
+            // Act
+            var result = await sut!.UpdateApplicationStatus(applicationUpdateQueueModel);
+
+            // Assert
+            Assert.IsNotNull(result);
+            Assert.AreEqual(applicationUpdateQueueModel.Id, result);
+
+            // Verify that the Update and SaveChanges methods were called on the mock repository
+            _applicationRepositoryMock?.Verify(repo => repo.Find(applicationUpdateQueueModel.Id), Times.Once);
+            _applicationRepositoryMock?.Verify(repo => repo.Update(It.IsAny<Entities.Application>()), Times.Once);
+            _applicationRepositoryMock?.Verify(repo => repo.SaveChanges(), Times.Once);
+        }
+
+        [Test]
+        public async Task UpdateApplicationStatus_AuthorisedWhenApplicationWasSuspended_ReturnsUpdatedApplicationId()
+        {
+            var dynamicId = Guid.NewGuid();
+            // Arrange
+            var applicationUpdateQueueModel = new Models.ApplicationUpdateQueueModel
+            {
+                Id = Guid.NewGuid(),
+                StatusId = "Authorised",
+                DynamicId = dynamicId,
+                DateAuthorised = DateTime.Now,
+                DateRejected = null,
+                DateRevoked = null
+            };
+
+            _applicationRepositoryMock?.Setup(repo => repo.Find(applicationUpdateQueueModel.Id))
+                .ReturnsAsync(new Entities.Application
+                {
+                    Id = (Guid)applicationUpdateQueueModel.Id,
+                    Status = "Suspended"
                 });
 
             // Act

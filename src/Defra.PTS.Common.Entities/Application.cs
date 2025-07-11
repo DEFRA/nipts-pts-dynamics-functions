@@ -27,6 +27,8 @@ namespace Defra.PTS.Common.Entities
         public DateTime? DateAuthorised { get; set; }
         public DateTime? DateRejected { get; set; }
         public DateTime? DateRevoked { get; set; }
+        public DateTime? DateSuspended { get; set; }
+        public DateTime? DateUnsuspended { get; set; }
         public Guid? CreatedBy { get; set; }
         public DateTime? CreatedOn { get; set; }
         public Guid? UpdatedBy { get; set; }

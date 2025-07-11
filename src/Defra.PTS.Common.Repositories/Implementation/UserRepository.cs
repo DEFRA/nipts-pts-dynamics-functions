@@ -38,7 +38,7 @@ namespace Defra.PTS.Common.Repositories.Implementation
         
         public async Task<(Guid?, Guid?, string)> GetUserDetails(Guid contactId)
         {
-            var user = await userContext!.User!.FirstOrDefaultAsync(a => a.ContactId == contactId);
+            var user = await userContext!.User!.Where(u => u.ContactId == contactId).OrderByDescending(a => a.CreatedOn).FirstOrDefaultAsync()!;
             return user != null ? (user.Id!, user.AddressId!, user.Email!) : (Guid.Empty, Guid.Empty, string.Empty);
         }
 
