@@ -46,6 +46,7 @@ namespace Defra.PTS.Common.ApiServices.Implementation
             _logger.LogInformation("Successfully sent application submitted message for ApplicationId : {0}", message.ApplicationId);
         }
 
+        [ExcludeFromCodeCoverage]
         private async Task AttemptSendBatch(ServiceBusSender sender, int batchIndex, ServiceBusMessageBatch messageBatch)
         {
             bool success = false;
