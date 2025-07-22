@@ -46,6 +46,29 @@ namespace Defra.PTS.Common.ApiServices.Implementation
             _logger.LogInformation("Successfully sent application submitted message for ApplicationId : {0}", message.ApplicationId);
         }
 
+        private async Task AttemptSendBatch(ServiceBusSender sender, int batchIndex, ServiceBusMessageBatch messageBatch)
+        {
+            bool success = false;
+            int attempts = 0;
+            while (!success && attempts < 10)
+            {
+                try
+                {
+                    await SendBatch(sender, batchIndex, messageBatch);
+                    success = true;
+                }
+                catch (ServiceBusException ex)
+                {
+                    attempts++;
+
+                    _logger.LogError(ex, "An error occurred sending the service bus batch. It will be retried in 5 seconds.");
+
+                    // The most likely cause of this error is the service bus namespace being throttled. Wait 5 seconds and try again.
+                    await Task.Delay(5000);
+                }
+            }
+        }
+
         [ExcludeFromCodeCoverage]
         private async Task SendBatchAsync<T>(List<T> messages)
         {
@@ -68,25 +91,7 @@ namespace Defra.PTS.Common.ApiServices.Implementation
                     serviceBusMessage.ApplicationProperties.Add("Application", "PTS");
                     if (!messageBatch.TryAddMessage(serviceBusMessage))
                     {
-                        bool success = false;
-                        int attempts = 0;
-                        while (!success && attempts < 10)
-                        {
-                            try
-                            {
-                                await SendBatch(sender, batchIndex, messageBatch);
-                                success = true;
-                            }
-                            catch (ServiceBusException ex)
-                            {
-                                attempts++;
-
-                                _logger.LogError(ex, "An error occurred sending the service bus batch. It will be retried in 5 seconds.");
-
-                                // The most likely cause of this error is the service bus namespace being throttled. Wait 5 seconds and try again.
-                                await Task.Delay(5000);
-                            }
-                        }
+                        await AttemptSendBatch(sender, batchIndex, messageBatch);
 
                         batchIndex++;
 
