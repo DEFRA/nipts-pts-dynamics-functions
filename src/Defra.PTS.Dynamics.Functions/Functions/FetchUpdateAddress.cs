@@ -53,7 +53,7 @@ public class FetchUpdateAddress
     }
 
     [FunctionName("FetchAndUpdateAddress")]
-    [OpenApiOperation(operationId: "FetchAndUpdateAddress", tags: new[] { TagName })]
+    [OpenApiOperation(operationId: "FetchAndUpdateAddress", tags: TagName )]
     [OpenApiRequestBody(contentType: "application/json", bodyType: typeof(Model.UserRequest), Description = "Sync User Details from Dynamics")]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(string), Description = "The OK response")]
     [OpenApiResponseWithBody(statusCode: HttpStatusCode.NotFound, contentType: "application/json", bodyType: typeof(string), Description = "The NotFound response")]
