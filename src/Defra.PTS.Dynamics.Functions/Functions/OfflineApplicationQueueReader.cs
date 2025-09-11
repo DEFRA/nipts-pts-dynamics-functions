@@ -82,6 +82,7 @@ namespace Defra.PTS.Dynamics.Functions.Functions
                 offlineApplication.Applicant.Email = standardizedEmail;
                 _logger.LogInformation("Set standardized email for applicant with document reference: {Reference}",
                     offlineApplication.Ptd?.DocumentReferenceNumber);
+                offlineApplication.Applicant.ContactId = Guid.NewGuid().ToString();
             }
 
             return offlineApplication;
