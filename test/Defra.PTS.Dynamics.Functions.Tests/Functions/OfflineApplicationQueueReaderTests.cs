@@ -332,6 +332,33 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
         }
 
         [Test]
+        public async Task ProcessOfflineApplication_ReplacesContactId()
+        {
+            var originalOwnerEmail = "owner@example.com";
+            var originalApplicantEmail = "applicant@example.com";
+            var ptdReferenceNumber = "GB826AD004A";
+            var contactId = "23a1805f-3dc2-4225-93ee-5bfa7a581188";
+
+            var message = JsonConvert.SerializeObject(new OfflineApplicationQueueModel
+            {
+                Application = new ApplicationInfo { ReferenceNumber = "GB12345678" },
+                Ptd = new PtdInfo { DocumentReferenceNumber = ptdReferenceNumber },
+                Owner = new OwnerInfo { Email = originalOwnerEmail },
+                Applicant = new ApplicantInfo { Email = originalApplicantEmail, ContactId = contactId.ToString()}
+            });
+
+            await _queueReader.ProcessOfflineApplication(message);
+
+            var expectedEmail = $"ad.blank.email.{ptdReferenceNumber}@example.com";
+
+            _offlineApplicationServiceMock.Verify(service =>
+                service.ProcessOfflineApplication(It.Is<OfflineApplicationQueueModel>(model =>
+                    model.Applicant.ContactId != expectedEmail)),
+                Times.Once);
+
+        }
+
+        [Test]
         public async Task ProcessOfflineApplication_NullPtdDocumentReference_HandlesGracefully()
         {
             var message = JsonConvert.SerializeObject(new OfflineApplicationQueueModel
