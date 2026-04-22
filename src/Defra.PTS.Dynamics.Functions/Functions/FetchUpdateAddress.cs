@@ -5,12 +5,9 @@ using Defra.PTS.Common.Models.Helper;
 using Defra.PTS.Common.Models.Options;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.WebJobs;
-using Microsoft.Azure.WebJobs.Extensions.Http;
-using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
+using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Microsoft.OpenApi.Models;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
@@ -52,11 +49,7 @@ public class FetchUpdateAddress
         _httpClient = httpClient;
     }
 
-    [FunctionName("FetchAndUpdateAddress")]
-    [OpenApiOperation(operationId: "FetchAndUpdateAddress", tags: TagName )]
-    [OpenApiRequestBody(contentType: "application/json", bodyType: typeof(Model.UserRequest), Description = "Sync User Details from Dynamics")]
-    [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(string), Description = "The OK response")]
-    [OpenApiResponseWithBody(statusCode: HttpStatusCode.NotFound, contentType: "application/json", bodyType: typeof(string), Description = "The NotFound response")]
+    [Function("FetchAndUpdateAddress")]
     public async Task<IActionResult> FetchAndUpdateAddress(
         [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "fetchupdateaddress")] HttpRequest req)
     {

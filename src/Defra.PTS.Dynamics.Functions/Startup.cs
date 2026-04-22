@@ -39,7 +39,7 @@ namespace Defra.PTS.Dynamics.Functions
                 string clientSecret = string.Empty;
                 string clientId = string.Empty;
                 string tenantId = string.Empty;
-                string keyVaultEndpoint = Configuration["KeyVaultUri"];
+                string keyVaultEndpoint = "https://devtrdinfkv1001.vault.azure.net/";
                 if (!string.IsNullOrEmpty(keyVaultEndpoint))
                 {
                     var secretClient = new SecretClient(new Uri(keyVaultEndpoint), new DefaultAzureCredential());
@@ -53,7 +53,7 @@ namespace Defra.PTS.Dynamics.Functions
                     clientId = keyVaultClientId.Value.ToString();
                 }
 
-                string authority = Configuration["DynamicOptions:Authority"] + tenantId;
+                string authority = "https://login.microsoftonline.com/" + tenantId;
 
                 var confidentialClient = ConfidentialClientApplicationBuilder
                     .Create(clientId)
