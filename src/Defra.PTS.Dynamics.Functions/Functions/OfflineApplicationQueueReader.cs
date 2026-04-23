@@ -55,7 +55,7 @@ namespace Defra.PTS.Dynamics.Functions.Functions
             await ProcessApplication(offlineApplication);
         }
 
-        private OfflineApplicationQueueModel DeserializeMessage(string queueMessage)
+        private OfflineApplicationQueueModel? DeserializeMessage(string queueMessage)
         {
             var offlineApplication = JsonConvert.DeserializeObject<OfflineApplicationQueueModel>(queueMessage);
             if (offlineApplication == null)

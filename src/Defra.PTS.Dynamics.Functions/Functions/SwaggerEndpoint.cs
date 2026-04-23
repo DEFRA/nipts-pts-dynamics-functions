@@ -120,7 +120,7 @@ public class SwaggerEndpoint
     """;
 
     [Function("SwaggerJson")]
-    public IActionResult GetSwaggerJson(
+    public static IActionResult GetSwaggerJson(
         [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "api/swagger.json")] HttpRequest req)
     {
         return new ContentResult
@@ -132,7 +132,7 @@ public class SwaggerEndpoint
     }
 
     [Function("SwaggerUI")]
-    public IActionResult GetSwaggerUI(
+    public static IActionResult GetSwaggerUI(
         [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "swagger")] HttpRequest req)
     {
         return new ContentResult

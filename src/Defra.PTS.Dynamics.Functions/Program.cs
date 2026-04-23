@@ -18,7 +18,7 @@ using static Defra.PTS.Common.Models.ConfigKeys;
 namespace Defra.PTS.Dynamics.Functions;
 
 [ExcludeFromCodeCoverage]
-public class Program
+public static class Program
 {
     public static void Main(string[] args)
     {
@@ -69,7 +69,7 @@ public class Program
 
                     var sqlconnection = string.Empty;
                     var serviceBusConnection = string.Empty;
-                    ServiceBusClient serviceBusClient = null;
+                    ServiceBusClient? serviceBusClient = null;
 
 #if DEBUG
                     sqlconnection = configuration["sql_db"];
@@ -82,7 +82,7 @@ public class Program
 #endif
 
                     services.AddTransient(_ => serviceBusClient);
-                    services.AddDefraRepositoryServices(sqlconnection);
+                    services.AddDefraRepositoryServices(sqlconnection ?? string.Empty);
                     services.AddDefraApiServices();
                     services.AddHttpClient();
                 }

@@ -21,8 +21,6 @@ namespace Defra.PTS.Dynamics.Functions.Functions
         private readonly IApplicationService _applicationService;
         private readonly IServiceBusService _azureServiceBusService;
 
-        private const string TagName = "QueueWriter";
-
         public QueueWriter(
             IApplicationService applicationService
             , IServiceBusService azureServiceBusService)

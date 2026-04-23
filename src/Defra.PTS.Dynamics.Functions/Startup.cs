@@ -21,7 +21,7 @@ namespace Defra.PTS.Dynamics.Functions
     [ExcludeFromCodeCoverage]
     public class Startup : FunctionsStartup
     {
-        private static IConfiguration Configuration { get; set; }
+        private static IConfiguration? Configuration { get; set; }
         public override void ConfigureAppConfiguration(IFunctionsConfigurationBuilder builder)
         {
             Configuration = builder.ConfigurationBuilder
@@ -67,7 +67,7 @@ namespace Defra.PTS.Dynamics.Functions
 
                 var sqlconnection = string.Empty;
                 var serviceBusConnection = string.Empty;
-                ServiceBusClient serviceBusClient = null;
+                ServiceBusClient? serviceBusClient = null;
 
 #if DEBUG
                 sqlconnection = Configuration["sql_db"];
@@ -81,7 +81,7 @@ namespace Defra.PTS.Dynamics.Functions
 
 
                 builder.Services.AddTransient(_ => serviceBusClient);
-                builder.Services.AddDefraRepositoryServices(sqlconnection);
+                builder.Services.AddDefraRepositoryServices(sqlconnection ?? string.Empty);
                 builder.Services.AddDefraApiServices();
             }
             catch (Exception ex)

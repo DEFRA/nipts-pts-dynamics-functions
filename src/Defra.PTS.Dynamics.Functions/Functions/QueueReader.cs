@@ -59,7 +59,7 @@ namespace Defra.PTS.Dynamics.Functions.Functions
                 throw new QueueReaderException("Invalid Queue Message :" + myQueueItem);
             }
 
-            ApplicationSubmittedMessageQueueModel currentApplication = JsonConvert.DeserializeObject<ApplicationSubmittedMessageQueueModel>(myQueueItem);
+            var currentApplication = JsonConvert.DeserializeObject<ApplicationSubmittedMessageQueueModel>(myQueueItem);
             if (currentApplication == null ||
                 currentApplication.ApplicationId == Guid.Empty)
             {
@@ -68,7 +68,7 @@ namespace Defra.PTS.Dynamics.Functions.Functions
 
             Guid applicationId = currentApplication.ApplicationId;
             
-            string apiVersion = _dynamicOptions.Value.ApiVersion;
+            var apiVersion = _dynamicOptions.Value.ApiVersion;
             string serviceUrl = await _keyVaultAccess.GetSecretAsync("Pts-Dynamics-Tenant-ServiceUrl");
             string apiUrl = $"{serviceUrl}/api/data/v{apiVersion}/nipts_ptdapplications";
 
@@ -112,10 +112,10 @@ namespace Defra.PTS.Dynamics.Functions.Functions
                 bool isValidJson = JsonHelper.IsValidJson(responseContent);
                 if (isValidJson)
                 {
-                    DynamicsResponseDto dynamicsEntryCreationResponse = JsonConvert.DeserializeObject<DynamicsResponseDto>(responseContent);
+                    var dynamicsEntryCreationResponse = JsonConvert.DeserializeObject<DynamicsResponseDto>(responseContent);
                     _logger.LogError("Dynamics Response Error : {0} - {1} - {2}"
-                        , applicationId, response.ReasonPhrase, dynamicsEntryCreationResponse.Error.Code, dynamicsEntryCreationResponse.Error.Message);
-                    throw new QueueReaderException($"{applicationId} - {response.ReasonPhrase} - {dynamicsEntryCreationResponse.Error.Code} - {dynamicsEntryCreationResponse.Error.Message}");
+                        , applicationId, response.ReasonPhrase, dynamicsEntryCreationResponse?.Error?.Code, dynamicsEntryCreationResponse?.Error?.Message);
+                    throw new QueueReaderException($"{applicationId} - {response.ReasonPhrase} - {dynamicsEntryCreationResponse?.Error?.Code} - {dynamicsEntryCreationResponse?.Error?.Message}");
                 }
                 else
                 {

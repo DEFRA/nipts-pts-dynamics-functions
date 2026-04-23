@@ -30,8 +30,6 @@ public class FetchUpdateAddress
     private readonly IKeyVaultAccess _keyVaultAccess;
     private readonly HttpClient _httpClient;
 
-    private const string TagName = "FetchAndUpdateAddress";
-
 
     public FetchUpdateAddress(
           ILogger<FetchUpdateAddress> log
@@ -96,31 +94,33 @@ public class FetchUpdateAddress
             {
                 var json = JObject.Parse(responseContent);
 
-                userRequestModel.Address.AddressLineOne = json["defra_addrcorsubbuildingname"]?.Value<string>();
-                userRequestModel.Address.AddressLineOne = userRequestModel.Address?.AddressLineOne + " " + json["defra_addrcorbuildingnumber"]?.Value<string>();
-                userRequestModel.Address.AddressLineTwo = json["defra_addrcorbuildingname"]?.Value<string>();
-                userRequestModel.Address.AddressLineTwo = userRequestModel.Address?.AddressLineTwo + " " + json["defra_addrcorstreet"]?.Value<string>();
-                userRequestModel.Address.TownOrCity = json["defra_addrcortown"]?.Value<string>();
-                userRequestModel.Address.PostCode = json["defra_addrcorpostcode"]?.Value<string>();
-                userRequestModel.Address.County = json["defra_addrcorcounty"]?.Value<string>();
+                userRequestModel.Address ??= new Model.Address();
+                var address = userRequestModel.Address;
+                address.AddressLineOne = json["defra_addrcorsubbuildingname"]?.Value<string>();
+                address.AddressLineOne = address.AddressLineOne + " " + json["defra_addrcorbuildingnumber"]?.Value<string>();
+                address.AddressLineTwo = json["defra_addrcorbuildingname"]?.Value<string>();
+                address.AddressLineTwo = address.AddressLineTwo + " " + json["defra_addrcorstreet"]?.Value<string>();
+                address.TownOrCity = json["defra_addrcortown"]?.Value<string>();
+                address.PostCode = json["defra_addrcorpostcode"]?.Value<string>();
+                address.County = json["defra_addrcorcounty"]?.Value<string>();
 
                 var telephone = json["telephone1"]?.Value<string>();
 
                 if (existingAddressId.HasValue && existingAddressId.Value != Guid.Empty)
                 {
-                    userRequestModel.Address.UpdatedBy = userId;
+                    address.UpdatedBy = userId;
 
                     addressId = await _userService.UpdateAddress(userRequestModel, existingAddressId.Value);
                 }
                 else
                 {
-                    userRequestModel.Address.CreatedBy = userId;
+                    address.CreatedBy = userId;
 
                     addressId = await _userService.AddAddress(userRequestModel);
                 }
-                string firstName = json["firstname"]?.Value<string>();
-                string lastName = json["lastname"]?.Value<string>();
-                await _userService.UpdateUser(firstName, lastName, email, telephone, addressId);
+                var firstName = json["firstname"]?.Value<string>();
+                var lastName = json["lastname"]?.Value<string>();
+                await _userService.UpdateUser(firstName ?? string.Empty, lastName ?? string.Empty, email, telephone ?? string.Empty, addressId);
             }
 
             if (ResponseNotValid(response.IsSuccessStatusCode, addressId, count))
@@ -136,9 +136,9 @@ public class FetchUpdateAddress
             bool isValidJson = JsonHelper.IsValidJson(responseContent);
             if (isValidJson)
             {        
-                DynamicsResponseDto dynamicsEntryCreationResponse = JsonConvert.DeserializeObject<DynamicsResponseDto>(responseContent);
-                _logger.LogError("Error: {StatusCode} - {ReasonPhrase} Dynamics Response Error : {Code} - {Message}", response.StatusCode, response.ReasonPhrase, dynamicsEntryCreationResponse.Error.Code, dynamicsEntryCreationResponse.Error.Message);
-                throw new UserFunctionException($"{response.ReasonPhrase} - {dynamicsEntryCreationResponse.Error.Code} - {dynamicsEntryCreationResponse.Error.Message}");
+                var dynamicsEntryCreationResponse = JsonConvert.DeserializeObject<DynamicsResponseDto>(responseContent);
+                _logger.LogError("Error: {StatusCode} - {ReasonPhrase} Dynamics Response Error : {Code} - {Message}", response.StatusCode, response.ReasonPhrase, dynamicsEntryCreationResponse?.Error?.Code, dynamicsEntryCreationResponse?.Error?.Message);
+                throw new UserFunctionException($"{response.ReasonPhrase} - {dynamicsEntryCreationResponse?.Error?.Code} - {dynamicsEntryCreationResponse?.Error?.Message}");
             }
             else
             {
