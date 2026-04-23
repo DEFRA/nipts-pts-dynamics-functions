@@ -7,7 +7,7 @@ using Microsoft.Azure.Functions.Worker;
 namespace Defra.PTS.Dynamics.Functions.Functions;
 
 [ExcludeFromCodeCoverage]
-public class SwaggerEndpoint
+public static class SwaggerEndpoint
 {
     private static readonly string OpenApiSpec = /*lang=json*/ """
     {
