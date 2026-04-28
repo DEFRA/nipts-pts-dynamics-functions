@@ -118,7 +118,7 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
         [Test]
         public void ProcessOfflineApplication_NullMessage_LogsWarning()
         {
-            Assert.DoesNotThrowAsync(async () => await _queueReader.ProcessOfflineApplication(null));
+            Assert.DoesNotThrowAsync(async () => await _queueReader.ProcessOfflineApplication(null!));
 
             _loggerMock.Verify(logger => logger.Log(
                 It.Is<LogLevel>(l => l == LogLevel.Warning),
