@@ -52,7 +52,12 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
             await _queueReader.ProcessOfflineApplication(string.Empty);
 
             _loggerMock.Verify(log => log.Log(
-                LogLevel.Warning, It.IsAny<EventId>(), It.IsAny<It.IsAnyType>(), It.IsAny<Exception>(), (Func<It.IsAnyType, Exception?, string>)It.IsAny<object>()), Times.Once);
+                It.Is<LogLevel>(l => l == LogLevel.Warning),
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => true),
+                It.IsAny<Exception>(),
+                (Func<It.IsAnyType, Exception?, string>)It.IsAny<object>()),
+            Times.Once);
         }
 
         [Test]
@@ -146,7 +151,7 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
             await _queueReader.ProcessOfflineApplication(validMessage);
 
             _loggerMock.Verify(log => log.Log(
-                LogLevel.Information,
+                It.Is<LogLevel>(l => l == LogLevel.Information),
                 It.IsAny<EventId>(),
                 It.Is<It.IsAnyType>((v, t) => v != null && v.ToString()!.Contains("Starting to process")),
                 It.IsAny<Exception>(),
@@ -183,7 +188,7 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
             await _queueReader.ProcessOfflineApplication(validMessage);
 
             _loggerMock.Verify(log => log.Log(
-                LogLevel.Information,
+                It.Is<LogLevel>(l => l == LogLevel.Information),
                 It.IsAny<EventId>(),
                 It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Successfully processed")),
                 It.IsAny<Exception>(),
@@ -207,7 +212,7 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
                 await _queueReader.ProcessOfflineApplication(validMessage));
 
             _loggerMock.Verify(log => log.Log(
-                LogLevel.Warning,
+                It.Is<LogLevel>(l => l == LogLevel.Warning),
                 It.IsAny<EventId>(),
                 It.Is<It.IsAnyType>((v, t) => true),
                 It.IsAny<Exception>(),
@@ -225,7 +230,7 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
                 await _queueReader.ProcessOfflineApplication("invalid"));
 
             _loggerMock.Verify(log => log.Log(
-                LogLevel.Error,
+                It.Is<LogLevel>(l => l == LogLevel.Error),
                 It.IsAny<EventId>(),
                 It.Is<It.IsAnyType>((v, t) => true),
                 It.IsAny<Exception>(),
@@ -315,7 +320,7 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
                 Times.Once);
 
             _loggerMock.Verify(log => log.Log(
-                LogLevel.Information,
+                It.Is<LogLevel>(l => l == LogLevel.Information),
                 It.IsAny<EventId>(),
                 It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Set standardized email for owner with document reference")),
                 It.IsAny<Exception>(),
@@ -323,7 +328,7 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
             Times.Once);
 
             _loggerMock.Verify(log => log.Log(
-                LogLevel.Information,
+                It.Is<LogLevel>(l => l == LogLevel.Information),
                 It.IsAny<EventId>(),
                 It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Set standardized email for applicant with document reference")),
                 It.IsAny<Exception>(),
