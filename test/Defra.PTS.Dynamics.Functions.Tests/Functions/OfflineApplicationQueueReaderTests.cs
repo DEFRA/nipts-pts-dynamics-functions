@@ -51,13 +51,7 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
         {
             await _queueReader.ProcessOfflineApplication(string.Empty);
 
-            _loggerMock.Verify(log => log.Log(
-                It.Is<LogLevel>(l => l == LogLevel.Warning),
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => true),
-                It.IsAny<Exception>(),
-                (Func<It.IsAnyType, Exception?, string>)It.IsAny<object>()),
-            Times.Once);
+            Assert.That(CountLogCalls(LogLevel.Warning), Is.EqualTo(1));
         }
 
         [Test]
@@ -90,29 +84,9 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
             Assert.ThrowsAsync<OfflineApplicationProcessingException>(async () =>
                 await _queueReader.ProcessOfflineApplication(validMessage));
 
-            _loggerMock.Verify(logger => logger.Log(
-                It.Is<LogLevel>(l => l == LogLevel.Information),
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Starting to process")),
-                It.IsAny<Exception>(),
-                (Func<It.IsAnyType, Exception?, string>)It.IsAny<object>()),
-            Times.Once);
-
-            _loggerMock.Verify(logger => logger.Log(
-                It.Is<LogLevel>(l => l == LogLevel.Error),
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Processing error for application")),
-                It.IsAny<Exception>(),
-                (Func<It.IsAnyType, Exception?, string>)It.IsAny<object>()),
-            Times.Once);
-
-            _loggerMock.Verify(logger => logger.Log(
-                It.Is<LogLevel>(l => l == LogLevel.Error),
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Unhandled error processing offline application")),
-                It.IsAny<Exception>(),
-                (Func<It.IsAnyType, Exception?, string>)It.IsAny<object>()),
-            Times.Once);
+            Assert.That(CountLogCalls(LogLevel.Information, "Starting to process"), Is.EqualTo(1));
+            Assert.That(CountLogCalls(LogLevel.Error, "Processing error for application"), Is.EqualTo(1));
+            Assert.That(CountLogCalls(LogLevel.Error, "Unhandled error processing offline application"), Is.EqualTo(1));
         }
 
         [Test]
@@ -120,13 +94,7 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
         {
             Assert.DoesNotThrowAsync(async () => await _queueReader.ProcessOfflineApplication(null!));
 
-            _loggerMock.Verify(logger => logger.Log(
-                It.Is<LogLevel>(l => l == LogLevel.Warning),
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => true),
-                It.IsAny<Exception>(),
-                (Func<It.IsAnyType, Exception?, string>)It.IsAny<object>()),
-            Times.Once);
+            Assert.That(CountLogCalls(LogLevel.Warning), Is.EqualTo(1));
         }
 
         [Test]
@@ -150,13 +118,7 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
 
             await _queueReader.ProcessOfflineApplication(validMessage);
 
-            _loggerMock.Verify(log => log.Log(
-                It.Is<LogLevel>(l => l == LogLevel.Information),
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v != null && v.ToString()!.Contains("Starting to process")),
-                It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
+            Assert.That(CountLogCalls(LogLevel.Information, "Starting to process"), Is.EqualTo(1));
         }
 
         [Test]
@@ -187,13 +149,7 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
 
             await _queueReader.ProcessOfflineApplication(validMessage);
 
-            _loggerMock.Verify(log => log.Log(
-                It.Is<LogLevel>(l => l == LogLevel.Information),
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Successfully processed")),
-                It.IsAny<Exception>(),
-                (Func<It.IsAnyType, Exception?, string>)It.IsAny<object>()),
-            Times.Once);
+            Assert.That(CountLogCalls(LogLevel.Information, "Successfully processed"), Is.EqualTo(1));
         }
 
         [Test]
@@ -211,13 +167,7 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
             Assert.ThrowsAsync<OfflineApplicationProcessingException>(async () =>
                 await _queueReader.ProcessOfflineApplication(validMessage));
 
-            _loggerMock.Verify(log => log.Log(
-                It.Is<LogLevel>(l => l == LogLevel.Warning),
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => true),
-                It.IsAny<Exception>(),
-                (Func<It.IsAnyType, Exception?, string>)It.IsAny<object>()),
-            Times.AtLeastOnce);
+            Assert.That(CountLogCalls(LogLevel.Warning), Is.GreaterThanOrEqualTo(1));
         }
 
         [Test]
@@ -229,48 +179,32 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
             Assert.ThrowsAsync<OfflineApplicationProcessingException>(async () =>
                 await _queueReader.ProcessOfflineApplication("invalid"));
 
-            _loggerMock.Verify(log => log.Log(
-                It.Is<LogLevel>(l => l == LogLevel.Error),
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => true),
-                It.IsAny<Exception>(),
-                (Func<It.IsAnyType, Exception?, string>)It.IsAny<object>()),
-            Times.Once);
+            Assert.That(CountLogCalls(LogLevel.Error), Is.EqualTo(1));
         }
 
         [Test]
         public void ProcessOfflineApplication_CompleteProcessingWithAllLogs_VerifyLogSequence()
         {
-            var sequence = new MockSequence();
             var validMessage = JsonConvert.SerializeObject(new OfflineApplicationQueueModel
             {
                 Application = new ApplicationInfo { ReferenceNumber = "GB12345678" },
                 Ptd = new PtdInfo { DocumentReferenceNumber = "GB826AD004A" }
             });
-            var logCalls = 0;
-
-            _loggerMock.InSequence(sequence).Setup(log => log.Log(
-                LogLevel.Information,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Starting to process")),
-                It.IsAny<Exception>(),
-                (Func<It.IsAnyType, Exception?, string>)It.IsAny<object>()))
-                .Callback(() => logCalls++);
-
-            _offlineApplicationServiceMock.InSequence(sequence)
-                .Setup(service => service.ProcessOfflineApplication(It.IsAny<OfflineApplicationQueueModel>()))
-                .Returns(Task.CompletedTask);
-
-            _loggerMock.InSequence(sequence).Setup(log => log.Log(
-                LogLevel.Information,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Successfully processed")),
-                It.IsAny<Exception>(),
-                (Func<It.IsAnyType, Exception?, string>)It.IsAny<object>()))
-                .Callback(() => logCalls++);
 
             Assert.DoesNotThrowAsync(async () => await _queueReader.ProcessOfflineApplication(validMessage));
-            Assert.That(logCalls, Is.EqualTo(2));
+
+            var logMessages = _loggerMock.Invocations
+                .Where(i => i.Method.Name == nameof(ILogger.Log))
+                .Where(i => (LogLevel)i.Arguments[0] == LogLevel.Information)
+                .Select(i => i.Arguments[2].ToString()!)
+                .ToList();
+
+            var startIndex = logMessages.FindIndex(m => m.Contains("Starting to process"));
+            var successIndex = logMessages.FindIndex(m => m.Contains("Successfully processed"));
+
+            Assert.That(startIndex, Is.GreaterThanOrEqualTo(0), "Expected 'Starting to process' log");
+            Assert.That(successIndex, Is.GreaterThanOrEqualTo(0), "Expected 'Successfully processed' log");
+            Assert.That(startIndex, Is.LessThan(successIndex), "Expected 'Starting to process' before 'Successfully processed'");
         }
 
         [Test]
@@ -319,21 +253,8 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
                     model.Applicant.Email == expectedEmail)),
                 Times.Once);
 
-            _loggerMock.Verify(log => log.Log(
-                It.Is<LogLevel>(l => l == LogLevel.Information),
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Set standardized email for owner with document reference")),
-                It.IsAny<Exception>(),
-                (Func<It.IsAnyType, Exception?, string>)It.IsAny<object>()),
-            Times.Once);
-
-            _loggerMock.Verify(log => log.Log(
-                It.Is<LogLevel>(l => l == LogLevel.Information),
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Set standardized email for applicant with document reference")),
-                It.IsAny<Exception>(),
-                (Func<It.IsAnyType, Exception?, string>)It.IsAny<object>()),
-            Times.Once);
+            Assert.That(CountLogCalls(LogLevel.Information, "Set standardized email for owner with document reference"), Is.EqualTo(1));
+            Assert.That(CountLogCalls(LogLevel.Information, "Set standardized email for applicant with document reference"), Is.EqualTo(1));
         }
 
         [Test]
@@ -388,6 +309,18 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
                     model.Owner.Email == expectedEmail &&
                     model.Applicant.Email == expectedEmail)),
                 Times.Once);
+        }
+
+        private int CountLogCalls(LogLevel level, string? messageContains = null)
+        {
+            var calls = _loggerMock.Invocations
+                .Where(i => i.Method.Name == nameof(ILogger.Log))
+                .Where(i => (LogLevel)i.Arguments[0] == level);
+
+            if (messageContains != null)
+                calls = calls.Where(i => i.Arguments[2].ToString()!.Contains(messageContains));
+
+            return calls.Count();
         }
 
         [Test]
