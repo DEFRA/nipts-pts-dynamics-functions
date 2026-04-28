@@ -21,7 +21,7 @@ namespace Defra.PTS.Common.Repositories.Implementation
         public async Task<Entity.Colour?> FindByName(string colourName)
         {
             return await CommonContext!.Colour
-                .FirstOrDefaultAsync(c => c.Name!.ToLower() == colourName.ToLower());
+                .FirstOrDefaultAsync(c => string.Equals(c.Name, colourName, StringComparison.OrdinalIgnoreCase));
         }
 
         public async Task<Entity.Colour?> FindById(int colourId)

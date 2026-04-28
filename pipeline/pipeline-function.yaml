@@ -63,7 +63,7 @@ extends:
           -AzureServiceBusOptions:OfflineApplicationQueueName "defra.trade.pts.application.adcreate"
           -KeyVaultUri "https://$(Environment.Name)TRD$(nc-function-infrastructure)$(nc-resource-keyvault)1001.vault.azure.net/"
           -ServiceBusConnection:fullyQualifiedNamespace "$(environment)TRE$(nc-function-infrastructure)$(nc-resource-servicebus)1001.servicebus.windows.net"
-          -FUNCTIONS_INPROC_NET8_ENABLED "1"
+          -FUNCTIONS_WORKER_RUNTIME "dotnet-isolated"
         tst: >-
           -DynamicOptions:Authority "https://login.microsoftonline.com/"
           -DynamicOptions:ApiVersion "9.1"
@@ -72,7 +72,7 @@ extends:
           -AzureServiceBusOptions:OfflineApplicationQueueName "defra.trade.pts.application.adcreate"
           -KeyVaultUri "https://$(Environment.Name)TRD$(nc-function-infrastructure)$(nc-resource-keyvault)1001.vault.azure.net/"
           -ServiceBusConnection:fullyQualifiedNamespace "$(environment)TRE$(nc-function-infrastructure)$(nc-resource-servicebus)1001.servicebus.windows.net"
-          -FUNCTIONS_INPROC_NET8_ENABLED "1"
+          -FUNCTIONS_WORKER_RUNTIME "dotnet-isolated"
         snd: >-
           -DynamicOptions:Authority "https://login.microsoftonline.com/"
           -DynamicOptions:ApiVersion "9.1"
@@ -81,7 +81,7 @@ extends:
           -AzureServiceBusOptions:OfflineApplicationQueueName "defra.trade.pts.application.adcreate"
           -KeyVaultUri "https://$(Environment.Name)TRD$(nc-function-infrastructure)$(nc-resource-keyvault)1001.vault.azure.net/"
           -ServiceBusConnection:fullyQualifiedNamespace "$(environment)TRE$(nc-function-infrastructure)$(nc-resource-servicebus)1001.servicebus.windows.net"
-          -FUNCTIONS_INPROC_NET8_ENABLED "1"
+          -FUNCTIONS_WORKER_RUNTIME "dotnet-isolated"
         pre: >-
           -DynamicOptions:Authority "https://login.microsoftonline.com/"
           -DynamicOptions:ApiVersion "9.1"
@@ -90,7 +90,7 @@ extends:
           -AzureServiceBusOptions:OfflineApplicationQueueName "defra.trade.pts.application.adcreate"
           -KeyVaultUri "https://$(Environment.Name)TRD$(nc-function-infrastructure)$(nc-resource-keyvault)1001.vault.azure.net/"
           -ServiceBusConnection:fullyQualifiedNamespace "$(environment)TRE$(nc-function-infrastructure)$(nc-resource-servicebus)1001.servicebus.windows.net"
-          -FUNCTIONS_INPROC_NET8_ENABLED "1"
+          -FUNCTIONS_WORKER_RUNTIME "dotnet-isolated"
         prd: >-
           -DynamicOptions:Authority "https://login.microsoftonline.com/"
           -DynamicOptions:ApiVersion "9.1"
@@ -99,7 +99,7 @@ extends:
           -AzureServiceBusOptions:OfflineApplicationQueueName "defra.trade.pts.application.adcreate"
           -KeyVaultUri "https://$(Environment.Name)TRD$(nc-function-infrastructure)$(nc-resource-keyvault)1001.vault.azure.net/"
           -ServiceBusConnection:fullyQualifiedNamespace "$(environment)TRE$(nc-function-infrastructure)$(nc-resource-servicebus)1001.servicebus.windows.net"
-          -FUNCTIONS_INPROC_NET8_ENABLED "1"
+          -FUNCTIONS_WORKER_RUNTIME "dotnet-isolated"
     skipBuildTests: false
     runIntegrationTests: false
     runSonarScan: true
