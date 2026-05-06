@@ -21,7 +21,7 @@ namespace Defra.PTS.Dynamics.Functions
     [ExcludeFromCodeCoverage]
     public class Startup : FunctionsStartup
     {
-        private static IConfiguration Configuration { get; set; }
+        private static IConfiguration? Configuration { get; set; }
         public override void ConfigureAppConfiguration(IFunctionsConfigurationBuilder builder)
         {
             Configuration = builder.ConfigurationBuilder
@@ -39,7 +39,7 @@ namespace Defra.PTS.Dynamics.Functions
                 string clientSecret = string.Empty;
                 string clientId = string.Empty;
                 string tenantId = string.Empty;
-                string keyVaultEndpoint = Configuration["KeyVaultUri"];
+                string keyVaultEndpoint = "https://devtrdinfkv1001.vault.azure.net/";
                 if (!string.IsNullOrEmpty(keyVaultEndpoint))
                 {
                     var secretClient = new SecretClient(new Uri(keyVaultEndpoint), new DefaultAzureCredential());
@@ -53,7 +53,7 @@ namespace Defra.PTS.Dynamics.Functions
                     clientId = keyVaultClientId.Value.ToString();
                 }
 
-                string authority = Configuration["DynamicOptions:Authority"] + tenantId;
+                string authority = "https://login.microsoftonline.com/" + tenantId;
 
                 var confidentialClient = ConfidentialClientApplicationBuilder
                     .Create(clientId)
@@ -67,7 +67,7 @@ namespace Defra.PTS.Dynamics.Functions
 
                 var sqlconnection = string.Empty;
                 var serviceBusConnection = string.Empty;
-                ServiceBusClient serviceBusClient = null;
+                ServiceBusClient? serviceBusClient = null;
 
 #if DEBUG
                 sqlconnection = Configuration["sql_db"];
@@ -81,7 +81,7 @@ namespace Defra.PTS.Dynamics.Functions
 
 
                 builder.Services.AddTransient(_ => serviceBusClient);
-                builder.Services.AddDefraRepositoryServices(sqlconnection);
+                builder.Services.AddDefraRepositoryServices(sqlconnection ?? string.Empty);
                 builder.Services.AddDefraApiServices();
             }
             catch (Exception ex)

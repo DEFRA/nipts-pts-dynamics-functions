@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Defra.PTS.Common.ApiServices.Interface;
 using Defra.PTS.Common.Models;
 using Defra.PTS.Common.Models.CustomException;
-using Microsoft.Azure.WebJobs;
+using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
@@ -15,7 +15,7 @@ namespace Defra.PTS.Dynamics.Functions.Functions
         private readonly IOfflineApplicationService _offlineApplicationService = offlineApplicationService;
         private readonly ILogger<OfflineApplicationQueueReader> _logger = logger;
 
-        [FunctionName("ProcessOfflineApplication")]
+        [Function("ProcessOfflineApplication")]
         public async Task ProcessOfflineApplication(
             [ServiceBusTrigger("%AzureServiceBusOptions:OfflineApplicationQueueName%",
             Connection = "ServiceBusConnection")] string queueMessage)
@@ -55,7 +55,7 @@ namespace Defra.PTS.Dynamics.Functions.Functions
             await ProcessApplication(offlineApplication);
         }
 
-        private OfflineApplicationQueueModel DeserializeMessage(string queueMessage)
+        private OfflineApplicationQueueModel? DeserializeMessage(string queueMessage)
         {
             var offlineApplication = JsonConvert.DeserializeObject<OfflineApplicationQueueModel>(queueMessage);
             if (offlineApplication == null)
@@ -82,6 +82,7 @@ namespace Defra.PTS.Dynamics.Functions.Functions
                 offlineApplication.Applicant.Email = standardizedEmail;
                 _logger.LogInformation("Set standardized email for applicant with document reference: {Reference}",
                     offlineApplication.Ptd?.DocumentReferenceNumber);
+                offlineApplication.Applicant.ContactId = Guid.NewGuid().ToString();
             }
 
             return offlineApplication;
