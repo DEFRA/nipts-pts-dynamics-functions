@@ -6,6 +6,7 @@ using Defra.PTS.Common.Models.CustomException;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
+using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Model = Defra.PTS.Common.Models;
@@ -30,6 +31,9 @@ namespace Defra.PTS.Dynamics.Functions.Functions
         }
 
         [Function("WriteApplicationToQueue")]
+        [OpenApiOperation(operationId: "WriteApplicationToQueue", tags: ["Queue"], Summary = "Submit an application message to the Service Bus queue")]
+        [OpenApiRequestBody(contentType: "application/json", bodyType: typeof(object), Required = true)]
+        [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(string), Description = "Message added to queue successfully")]
         public async Task<IActionResult> WriteApplicationToQueue(
             [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "writetoqueue")] HttpRequest req
             )

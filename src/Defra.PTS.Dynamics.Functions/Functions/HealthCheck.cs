@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
+using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
@@ -30,6 +31,9 @@ namespace Defra.PTS.Dynamics.Functions.Functions
         }
 
         [Function("HealthCheck")]
+        [OpenApiOperation(operationId: "HealthCheck", tags: ["Health"], Summary = "Health check endpoint")]
+        [OpenApiResponseWithoutBody(statusCode: HttpStatusCode.OK, Description = "Services are healthy")]
+        [OpenApiResponseWithoutBody(statusCode: HttpStatusCode.ServiceUnavailable, Description = "One or more services are unavailable")]
         public async Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "health")] HttpRequest req)
         {
