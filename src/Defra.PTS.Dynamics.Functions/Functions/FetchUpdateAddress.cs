@@ -6,6 +6,7 @@ using Defra.PTS.Common.Models.Options;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
+using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
@@ -48,6 +49,10 @@ public class FetchUpdateAddress
     }
 
     [Function("FetchAndUpdateAddress")]
+    [OpenApiOperation(operationId: "FetchAndUpdateAddress", tags: ["Address"], Summary = "Fetch contact details from Dynamics and update the user address")]
+    [OpenApiRequestBody(contentType: "application/json", bodyType: typeof(object), Required = true)]
+    [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(string), Description = "Address updated successfully")]
+    [OpenApiResponseWithoutBody(statusCode: HttpStatusCode.NotFound, Description = "User not found for the given contact")]
     public async Task<IActionResult> FetchAndUpdateAddress(
         [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "fetchupdateaddress")] HttpRequest req)
     {

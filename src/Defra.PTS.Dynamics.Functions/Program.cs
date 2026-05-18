@@ -5,6 +5,7 @@ using Defra.PTS.Common.ApiServices.Configuration;
 using Defra.PTS.Common.Models.Options;
 using Defra.PTS.Dynamics.Functions.Configuration;
 using Microsoft.Azure.Functions.Worker;
+using Microsoft.Azure.Functions.Worker.Extensions.OpenApi.Extensions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -24,6 +25,7 @@ public static class Program
     {
         var host = new HostBuilder()
             .ConfigureFunctionsWebApplication()
+            .ConfigureOpenApi()
             .ConfigureAppConfiguration((context, builder) =>
             {
                 builder
