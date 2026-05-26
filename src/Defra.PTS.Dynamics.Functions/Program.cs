@@ -83,7 +83,7 @@ public static class Program
                     serviceBusClient = new ServiceBusClient(serviceBusConnection, new DefaultAzureCredential());
 #endif
 
-                    services.AddTransient(_ => serviceBusClient);
+                    services.AddSingleton(serviceBusClient);
                     services.AddDefraRepositoryServices(sqlconnection ?? string.Empty);
                     services.AddDefraApiServices();
                     services.AddHttpClient();
