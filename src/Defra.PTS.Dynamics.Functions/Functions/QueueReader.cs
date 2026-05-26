@@ -86,7 +86,10 @@ namespace Defra.PTS.Dynamics.Functions.Functions
                 throw new QueueReaderException("Invalid Data Object so cannot Post to Dynamics");
             }
 
-            applicationObject.NiptsApplicationLanguage = currentApplication.ApplicationLanguage.ToString();
+            // Default to English (489480000) if ApplicationLanguage is not set or invalid
+            applicationObject.NiptsApplicationLanguage = currentApplication.ApplicationLanguage == 0 
+                ? "489480000" 
+                : currentApplication.ApplicationLanguage.ToString();
             string jsonData = JsonConvert.SerializeObject(applicationObject);
             _logger.LogInformation("Request Headers for application: {0} {1} Posting Json Payload: {2}", applicationId.ToString(), _httpClient.DefaultRequestHeaders.ToString(), jsonData);
             StringContent content = new StringContent(jsonData, Encoding.UTF8, "application/json");
