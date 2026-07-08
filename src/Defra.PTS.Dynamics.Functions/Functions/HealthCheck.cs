@@ -4,12 +4,18 @@ using System.Net;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.Functions.Worker;
+using Microsoft.Azure.Management.AppService.Fluent;
+using Microsoft.Azure.WebJobs;
+using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
+using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Logging;
+using Microsoft.OpenApi.Models;
 using Microsoft.Extensions.Configuration;
+using Newtonsoft.Json;
 using Microsoft.Extensions.Options;
 using Defra.PTS.Common.Models.Options;
+using static Microsoft.Azure.KeyVault.WebKey.JsonWebKeyVerifier;
 using Defra.PTS.Common.ApiServices.Interface;
 
 namespace Defra.PTS.Dynamics.Functions.Functions
@@ -18,26 +24,25 @@ namespace Defra.PTS.Dynamics.Functions.Functions
     {
         private readonly IApplicationService _applicationService;
         private readonly IDynamicsService _dynamicsService;
-        private readonly ILogger<HealthCheck> _logger;
+
+        private const string TagName = "name";
 
         public HealthCheck(
             IApplicationService applicationService
-            , IDynamicsService dynamicsService
-            , ILogger<HealthCheck> logger)
+            , IDynamicsService dynamicsService)
         {
             _applicationService = applicationService;
             _dynamicsService = dynamicsService;
-            _logger = logger;
         }
 
-        [Function("HealthCheck")]
-        [OpenApiOperation(operationId: "HealthCheck", tags: ["Health"], Summary = "Health check endpoint")]
-        [OpenApiResponseWithoutBody(statusCode: HttpStatusCode.OK, Description = "Services are healthy")]
-        [OpenApiResponseWithoutBody(statusCode: HttpStatusCode.ServiceUnavailable, Description = "One or more services are unavailable")]
+        [FunctionName("HealthCheck")]
+        [OpenApiOperation(operationId: "Run", tags: TagName )]
+        [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "text/plain", bodyType: typeof(string), Description = "The OK response")]
         public async Task<IActionResult> Run(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "health")] HttpRequest req)
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "health")] HttpRequest req
+            , ILogger log)
         {
-            _logger.LogInformation("C# HTTP trigger function processed a request.");
+            log.LogInformation("C# HTTP trigger function processed a request.");
 
             // Perform health check logic here
             bool isSqlConnectionHealthy = await _applicationService.PerformHealthCheckLogic();
