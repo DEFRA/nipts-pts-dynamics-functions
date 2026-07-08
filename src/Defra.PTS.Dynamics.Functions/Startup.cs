@@ -80,7 +80,7 @@ namespace Defra.PTS.Dynamics.Functions
 #endif
 
 
-                builder.Services.AddTransient(_ => serviceBusClient);
+                builder.Services.AddSingleton(serviceBusClient);
                 builder.Services.AddDefraRepositoryServices(sqlconnection);
                 builder.Services.AddDefraApiServices();
             }
