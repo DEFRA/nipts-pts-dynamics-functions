@@ -52,7 +52,7 @@ extends:
       **/*Functions.csproj
       **/*Tests.csproj
     publishProject: '**/*Functions.csproj'
-    setupMiUser: 'true'
+    setupMiUser: 'false'
     connectionStrings: '[{"name": "sql_db", "value": "Server=tcp:$(sqlServerName),1433;Database=pet-travel;Authentication=Active Directory Managed Identity;", "type": "SQLAzure", "slotSetting": false}]'
     appSettingsEnv:
         dev: >-
