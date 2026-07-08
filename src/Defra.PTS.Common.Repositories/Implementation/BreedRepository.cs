@@ -22,7 +22,7 @@ namespace Defra.PTS.Common.Repositories.Implementation
         public async Task<Entity.Breed?> FindByName(string breedName)
         {
             return await CommonContext!.Breed
-                .FirstOrDefaultAsync(b => string.Equals(b.Name, breedName, StringComparison.OrdinalIgnoreCase));
+                .FirstOrDefaultAsync(b => b.Name!.ToLower() == breedName.ToLower());
         }
 
         public async Task<Entity.Breed?> FindById(int breedId)
@@ -33,7 +33,7 @@ namespace Defra.PTS.Common.Repositories.Implementation
         public async Task<Entity.Breed?> FindByNameAndSpecies(string breedName, int speciesId)
         {
             return await CommonContext!.Breed
-                .FirstOrDefaultAsync(b => string.Equals(b.Name, breedName, StringComparison.OrdinalIgnoreCase) &&
+                .FirstOrDefaultAsync(b => b.Name!.ToLower() == breedName.ToLower() &&
                                         b.SpeciesId == speciesId);
         }
 

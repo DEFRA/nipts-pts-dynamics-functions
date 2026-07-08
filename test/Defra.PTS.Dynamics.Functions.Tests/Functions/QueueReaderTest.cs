@@ -1,4 +1,4 @@
-using Azure;
+﻿using Azure;
 using Azure.Identity;
 using Azure.Security.KeyVault.Secrets;
 using Defra.PTS.Common.ApiServices.Interface;
@@ -6,10 +6,13 @@ using Defra.PTS.Common.Models;
 using Defra.PTS.Common.Models.CustomException;
 using Defra.PTS.Common.Models.Options;
 using Defra.PTS.Dynamics.Functions.Functions;
+using Microsoft.AspNetCore.Builder.Extensions;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Azure.Documents.SystemFunctions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Identity.Client;
+using Microsoft.IdentityModel.Clients.ActiveDirectory;
 using Moq;
 using Moq.Protected;
 using Newtonsoft.Json;
@@ -32,13 +35,13 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
         private Mock<IApplicationService> _applicationServiceMock = new();
         private Mock<IKeyVaultAccess> _keyVaultAcessMock = new();
         private Mock<HttpClient> _httpClientMock = new();
-        private Mock<ILogger<QueueReader>> _loggerMock = new();
+        private Mock<ILogger> _loggerMock = new();
         private QueueReader? _systemUnderTest;
 
         [SetUp]
         public void SetUp()
         {
-            _systemUnderTest = new QueueReader(_dynamicsServiceMock.Object, _dynamicOptionsMock.Object, _applicationServiceMock.Object, _keyVaultAcessMock.Object, _httpClientMock.Object, _loggerMock.Object);
+            _systemUnderTest = new QueueReader(_dynamicsServiceMock.Object, _dynamicOptionsMock.Object, _applicationServiceMock.Object, _keyVaultAcessMock.Object, _httpClientMock.Object);
         }
 
         [TearDown]
@@ -59,7 +62,7 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
             var expectedResult = "Invalid Queue Message :" + myQueueItem;
 
             // Act
-            var result =  Assert.ThrowsAsync<QueueReaderException>(() => _systemUnderTest!.ReadApplicationFromQueue(myQueueItem));
+            var result =  Assert.ThrowsAsync<QueueReaderException>(() => _systemUnderTest!.ReadApplicationFromQueue(myQueueItem, _loggerMock.Object));
 
             // Assert
             Assert.That(result, Is.Not.Null);
@@ -73,7 +76,7 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
             var expectedResult = "Invalid Object from message :" + myQueueItem;
 
             // Act
-            var result =  Assert.ThrowsAsync<QueueReaderException>(() => _systemUnderTest!.ReadApplicationFromQueue(myQueueItem));
+            var result =  Assert.ThrowsAsync<QueueReaderException>(() => _systemUnderTest!.ReadApplicationFromQueue(myQueueItem, _loggerMock.Object));
 
             // Assert
             Assert.That(result, Is.Not.Null);
@@ -120,11 +123,11 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
 
             var httpClientMock = new HttpClient(handlerMock.Object);
 
-            _systemUnderTest = new QueueReader(_dynamicsServiceMock.Object, _dynamicOptionsMock.Object, _applicationServiceMock.Object, _keyVaultAcessMock.Object, httpClientMock, _loggerMock.Object);
+            _systemUnderTest = new QueueReader(_dynamicsServiceMock.Object, _dynamicOptionsMock.Object, _applicationServiceMock.Object, _keyVaultAcessMock.Object, httpClientMock);
 
 
             // Act
-            var result = Assert.ThrowsAsync<QueueReaderException>(() => _systemUnderTest.ReadApplicationFromQueue(myQueueItem));
+            var result = Assert.ThrowsAsync<QueueReaderException>(() => _systemUnderTest.ReadApplicationFromQueue(myQueueItem, _loggerMock.Object));
 
             // Assert
             // Add your assertions here based on the expected behavior
@@ -187,12 +190,12 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
 
             var httpClientMock = new HttpClient(handlerMock.Object);
 
-            _systemUnderTest = new QueueReader(_dynamicsServiceMock.Object, _dynamicOptionsMock.Object, _applicationServiceMock.Object, _keyVaultAcessMock.Object, httpClientMock, _loggerMock.Object);
+            _systemUnderTest = new QueueReader(_dynamicsServiceMock.Object, _dynamicOptionsMock.Object, _applicationServiceMock.Object, _keyVaultAcessMock.Object, httpClientMock);
 
 
             // Act
             // Act
-            var result = Assert.ThrowsAsync<QueueReaderException>(() => _systemUnderTest.ReadApplicationFromQueue(myQueueItem));
+            var result = Assert.ThrowsAsync<QueueReaderException>(() => _systemUnderTest.ReadApplicationFromQueue(myQueueItem, _loggerMock.Object));
 
             // Assert
             // Add your assertions here based on the expected behavior
@@ -253,11 +256,11 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
 
             var httpClientMock = new HttpClient(handlerMock.Object);
 
-             _systemUnderTest = new QueueReader(_dynamicsServiceMock.Object, _dynamicOptionsMock.Object, _applicationServiceMock.Object, _keyVaultAcessMock.Object, httpClientMock, _loggerMock.Object);
+             _systemUnderTest = new QueueReader(_dynamicsServiceMock.Object, _dynamicOptionsMock.Object, _applicationServiceMock.Object, _keyVaultAcessMock.Object, httpClientMock);
 
 
             // Act
-            await _systemUnderTest.ReadApplicationFromQueue(myQueueItem);
+            await _systemUnderTest.ReadApplicationFromQueue(myQueueItem, _loggerMock.Object);
 
             // Assert
             // Add your assertions here based on the expected behavior
@@ -314,11 +317,11 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
 
             var httpClientMock = new HttpClient(handlerMock.Object);
 
-            _systemUnderTest = new QueueReader(_dynamicsServiceMock.Object, _dynamicOptionsMock.Object, _applicationServiceMock.Object, _keyVaultAcessMock.Object, httpClientMock, _loggerMock.Object);
+            _systemUnderTest = new QueueReader(_dynamicsServiceMock.Object, _dynamicOptionsMock.Object, _applicationServiceMock.Object, _keyVaultAcessMock.Object, httpClientMock);
 
 
             // Act
-            var result = Assert.ThrowsAsync<QueueReaderException>(() => _systemUnderTest.ReadApplicationFromQueue(myQueueItem));
+            var result = Assert.ThrowsAsync<QueueReaderException>(() => _systemUnderTest.ReadApplicationFromQueue(myQueueItem, _loggerMock.Object));
 
             Assert.That(result, Is.Not.Null);
             Assert.AreEqual(expectedResult, result!.Message);
@@ -377,11 +380,11 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
 
             var httpClientMock = new HttpClient(handlerMock.Object);
 
-            _systemUnderTest = new QueueReader(_dynamicsServiceMock.Object, _dynamicOptionsMock.Object, _applicationServiceMock.Object, _keyVaultAcessMock.Object, httpClientMock, _loggerMock.Object);
+            _systemUnderTest = new QueueReader(_dynamicsServiceMock.Object, _dynamicOptionsMock.Object, _applicationServiceMock.Object, _keyVaultAcessMock.Object, httpClientMock);
 
 
             // Act
-            var result = Assert.ThrowsAsync<QueueReaderException>(() => _systemUnderTest.ReadApplicationFromQueue(myQueueItem));
+            var result = Assert.ThrowsAsync<QueueReaderException>(() => _systemUnderTest.ReadApplicationFromQueue(myQueueItem, _loggerMock.Object));
 
             Assert.That(result, Is.Not.Null);
 
@@ -440,11 +443,11 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
 
             var httpClientMock = new HttpClient(handlerMock.Object);
 
-            _systemUnderTest = new QueueReader(_dynamicsServiceMock.Object, _dynamicOptionsMock.Object, _applicationServiceMock.Object, _keyVaultAcessMock.Object, httpClientMock, _loggerMock.Object);
+            _systemUnderTest = new QueueReader(_dynamicsServiceMock.Object, _dynamicOptionsMock.Object, _applicationServiceMock.Object, _keyVaultAcessMock.Object, httpClientMock);
 
 
             // Act
-            var result = Assert.ThrowsAsync<QueueReaderException>(() => _systemUnderTest.ReadApplicationFromQueue(myQueueItem));
+            var result = Assert.ThrowsAsync<QueueReaderException>(() => _systemUnderTest.ReadApplicationFromQueue(myQueueItem, _loggerMock.Object));
 
             Assert.That(result, Is.Not.Null);
             Assert.AreEqual(expectedResult, result!.Message);
@@ -472,7 +475,7 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
             var expectedResult = "Invalid Queue Message :" + myQueueItem;
 
             // Act
-            var result = Assert.ThrowsAsync<QueueReaderException>(() => _systemUnderTest!.UpdateApplicationFromQueue(myQueueItem));
+            var result = Assert.ThrowsAsync<QueueReaderException>(() => _systemUnderTest!.UpdateApplicationFromQueue(myQueueItem, _loggerMock.Object));
 
             // Assert
             Assert.That(result, Is.Not.Null);
@@ -486,7 +489,7 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
             var expectedResult = "Invalid Object from message :" + myQueueItem;
 
             // Act
-            var result = Assert.ThrowsAsync<QueueReaderException>(() => _systemUnderTest!.UpdateApplicationFromQueue(myQueueItem));
+            var result = Assert.ThrowsAsync<QueueReaderException>(() => _systemUnderTest!.UpdateApplicationFromQueue(myQueueItem, _loggerMock.Object));
 
             // Assert
             Assert.That(result, Is.Not.Null);
@@ -505,7 +508,7 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
                 .ReturnsAsync(appId);
 
             // Act
-            var result = _systemUnderTest!.UpdateApplicationFromQueue(myQueueItem);
+            var result = _systemUnderTest!.UpdateApplicationFromQueue(myQueueItem, _loggerMock.Object);
 
             // Assert
             Assert.That(result, Is.Not.Null);

@@ -16,7 +16,7 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
     public class HealthCheckTest
     {
         private Mock<HttpRequest> _requestMock = new();
-        private Mock<ILogger<testFunc.HealthCheck>> _loggerMock = new();
+        private Mock<ILogger> _loggerMock = new();
         private Mock<IApplicationService> _applicationServiceMock = new();
         private Mock<IDynamicsService> _dynamicsServiceMock = new();
         testFunc.HealthCheck? sut;
@@ -24,7 +24,7 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
         [SetUp]
         public void SetUp()
         {
-            sut = new testFunc.HealthCheck(_applicationServiceMock.Object, _dynamicsServiceMock.Object, _loggerMock.Object);
+            sut = new testFunc.HealthCheck(_applicationServiceMock.Object, _dynamicsServiceMock.Object);
         }
 
         [TearDown]
@@ -41,7 +41,7 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
         {
             _applicationServiceMock.Setup(a => a.PerformHealthCheckLogic()).Returns(Task.FromResult(true));
             _dynamicsServiceMock.Setup(a => a.PerformHealthCheckLogic()).Returns(Task.FromResult(true));
-            var result = sut!.Run(_requestMock.Object);
+            var result = sut!.Run(_requestMock.Object, _loggerMock.Object);
             var okResult = result.Result as OkResult;
             Assert.IsNotNull(result);
             Assert.AreEqual(200, okResult?.StatusCode);
@@ -57,7 +57,7 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
         {
             _applicationServiceMock.Setup(a => a.PerformHealthCheckLogic()).Returns(Task.FromResult(isSqlHealthy));
             _dynamicsServiceMock.Setup(a => a.PerformHealthCheckLogic()).Returns(Task.FromResult(isDynamicshealthy));
-            var result = sut!.Run(_requestMock.Object);
+            var result = sut!.Run(_requestMock.Object, _loggerMock.Object);
             var okResult = result.Result as StatusCodeResult;
             Assert.IsNotNull(result);
             Assert.AreEqual(503, okResult?.StatusCode);
