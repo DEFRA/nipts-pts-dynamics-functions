@@ -5,10 +5,12 @@ using Defra.PTS.Common.Models.Helper;
 using Defra.PTS.Common.Models.Options;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.Functions.Worker;
+using Microsoft.Azure.WebJobs;
+using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.OpenApi.Models;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
@@ -31,6 +33,8 @@ public class FetchUpdateAddress
     private readonly IKeyVaultAccess _keyVaultAccess;
     private readonly HttpClient _httpClient;
 
+    private const string TagName = "FetchAndUpdateAddress";
+
 
     public FetchUpdateAddress(
           ILogger<FetchUpdateAddress> log
@@ -48,11 +52,11 @@ public class FetchUpdateAddress
         _httpClient = httpClient;
     }
 
-    [Function("FetchAndUpdateAddress")]
-    [OpenApiOperation(operationId: "FetchAndUpdateAddress", tags: ["Address"], Summary = "Fetch contact details from Dynamics and update the user address")]
-    [OpenApiRequestBody(contentType: "application/json", bodyType: typeof(object), Required = true)]
-    [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(string), Description = "Address updated successfully")]
-    [OpenApiResponseWithoutBody(statusCode: HttpStatusCode.NotFound, Description = "User not found for the given contact")]
+    [FunctionName("FetchAndUpdateAddress")]
+    [OpenApiOperation(operationId: "FetchAndUpdateAddress", tags: TagName )]
+    [OpenApiRequestBody(contentType: "application/json", bodyType: typeof(Model.UserRequest), Description = "Sync User Details from Dynamics")]
+    [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(string), Description = "The OK response")]
+    [OpenApiResponseWithBody(statusCode: HttpStatusCode.NotFound, contentType: "application/json", bodyType: typeof(string), Description = "The NotFound response")]
     public async Task<IActionResult> FetchAndUpdateAddress(
         [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "fetchupdateaddress")] HttpRequest req)
     {
@@ -99,33 +103,31 @@ public class FetchUpdateAddress
             {
                 var json = JObject.Parse(responseContent);
 
-                userRequestModel.Address ??= new Model.Address();
-                var address = userRequestModel.Address;
-                address.AddressLineOne = json["defra_addrcorsubbuildingname"]?.Value<string>();
-                address.AddressLineOne = address.AddressLineOne + " " + json["defra_addrcorbuildingnumber"]?.Value<string>();
-                address.AddressLineTwo = json["defra_addrcorbuildingname"]?.Value<string>();
-                address.AddressLineTwo = address.AddressLineTwo + " " + json["defra_addrcorstreet"]?.Value<string>();
-                address.TownOrCity = json["defra_addrcortown"]?.Value<string>();
-                address.PostCode = json["defra_addrcorpostcode"]?.Value<string>();
-                address.County = json["defra_addrcorcounty"]?.Value<string>();
+                userRequestModel.Address.AddressLineOne = json["defra_addrcorsubbuildingname"]?.Value<string>();
+                userRequestModel.Address.AddressLineOne = userRequestModel.Address?.AddressLineOne + " " + json["defra_addrcorbuildingnumber"]?.Value<string>();
+                userRequestModel.Address.AddressLineTwo = json["defra_addrcorbuildingname"]?.Value<string>();
+                userRequestModel.Address.AddressLineTwo = userRequestModel.Address?.AddressLineTwo + " " + json["defra_addrcorstreet"]?.Value<string>();
+                userRequestModel.Address.TownOrCity = json["defra_addrcortown"]?.Value<string>();
+                userRequestModel.Address.PostCode = json["defra_addrcorpostcode"]?.Value<string>();
+                userRequestModel.Address.County = json["defra_addrcorcounty"]?.Value<string>();
 
                 var telephone = json["telephone1"]?.Value<string>();
 
                 if (existingAddressId.HasValue && existingAddressId.Value != Guid.Empty)
                 {
-                    address.UpdatedBy = userId;
+                    userRequestModel.Address.UpdatedBy = userId;
 
                     addressId = await _userService.UpdateAddress(userRequestModel, existingAddressId.Value);
                 }
                 else
                 {
-                    address.CreatedBy = userId;
+                    userRequestModel.Address.CreatedBy = userId;
 
                     addressId = await _userService.AddAddress(userRequestModel);
                 }
-                var firstName = json["firstname"]?.Value<string>();
-                var lastName = json["lastname"]?.Value<string>();
-                await _userService.UpdateUser(firstName ?? string.Empty, lastName ?? string.Empty, email, telephone ?? string.Empty, addressId);
+                string firstName = json["firstname"]?.Value<string>();
+                string lastName = json["lastname"]?.Value<string>();
+                await _userService.UpdateUser(firstName, lastName, email, telephone, addressId);
             }
 
             if (ResponseNotValid(response.IsSuccessStatusCode, addressId, count))
@@ -141,9 +143,9 @@ public class FetchUpdateAddress
             bool isValidJson = JsonHelper.IsValidJson(responseContent);
             if (isValidJson)
             {        
-                var dynamicsEntryCreationResponse = JsonConvert.DeserializeObject<DynamicsResponseDto>(responseContent);
-                _logger.LogError("Error: {StatusCode} - {ReasonPhrase} Dynamics Response Error : {Code} - {Message}", response.StatusCode, response.ReasonPhrase, dynamicsEntryCreationResponse?.Error?.Code, dynamicsEntryCreationResponse?.Error?.Message);
-                throw new UserFunctionException($"{response.ReasonPhrase} - {dynamicsEntryCreationResponse?.Error?.Code} - {dynamicsEntryCreationResponse?.Error?.Message}");
+                DynamicsResponseDto dynamicsEntryCreationResponse = JsonConvert.DeserializeObject<DynamicsResponseDto>(responseContent);
+                _logger.LogError("Error: {StatusCode} - {ReasonPhrase} Dynamics Response Error : {Code} - {Message}", response.StatusCode, response.ReasonPhrase, dynamicsEntryCreationResponse.Error.Code, dynamicsEntryCreationResponse.Error.Message);
+                throw new UserFunctionException($"{response.ReasonPhrase} - {dynamicsEntryCreationResponse.Error.Code} - {dynamicsEntryCreationResponse.Error.Message}");
             }
             else
             {

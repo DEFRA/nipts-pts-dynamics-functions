@@ -5,13 +5,18 @@ using Defra.PTS.Common.ApiServices.Interface;
 using Defra.PTS.Common.Models.CustomException;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.Functions.Worker;
+using Microsoft.Azure.WebJobs;
+using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
 using Microsoft.Extensions.Logging;
+using Microsoft.OpenApi.Models;
 using Newtonsoft.Json;
 using Model = Defra.PTS.Common.Models;
-using Azure.Messaging.ServiceBus;
+using Microsoft.Azure.ServiceBus;
 using static Defra.PTS.Common.Models.ConfigKeys;
+using Microsoft.Azure.Management.AppService.Fluent;
+using Azure.Messaging.ServiceBus;
+using Microsoft.Azure.Management.Storage.Fluent.Models;
 using System.Threading;
 using System;
 
@@ -22,6 +27,8 @@ namespace Defra.PTS.Dynamics.Functions.Functions
         private readonly IApplicationService _applicationService;
         private readonly IServiceBusService _azureServiceBusService;
 
+        private const string TagName = "QueueWriter";
+
         public QueueWriter(
             IApplicationService applicationService
             , IServiceBusService azureServiceBusService)
@@ -30,10 +37,10 @@ namespace Defra.PTS.Dynamics.Functions.Functions
             _azureServiceBusService = azureServiceBusService;
         }
 
-        [Function("WriteApplicationToQueue")]
-        [OpenApiOperation(operationId: "WriteApplicationToQueue", tags: ["Queue"], Summary = "Submit an application message to the Service Bus queue")]
-        [OpenApiRequestBody(contentType: "application/json", bodyType: typeof(object), Required = true)]
-        [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(string), Description = "Message added to queue successfully")]
+        [FunctionName("WriteApplicationToQueue")]
+        [OpenApiOperation(operationId: "WriteApplicationToQueue", tags: TagName )]
+        [OpenApiRequestBody(contentType: "application/json", bodyType: typeof(Model.ApplicationSubmittedMessageQueueModel), Description = "Add Application to Queue")]
+        [OpenApiResponseWithBody(statusCode: HttpStatusCode.OK, contentType: "application/json", bodyType: typeof(string), Description = "The OK response")]
         public async Task<IActionResult> WriteApplicationToQueue(
             [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "writetoqueue")] HttpRequest req
             )
