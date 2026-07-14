@@ -8,7 +8,6 @@ using Defra.PTS.Common.Models.Options;
 using Defra.PTS.Dynamics.Functions.Functions;
 using Microsoft.AspNetCore.Builder.Extensions;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Azure.Documents.SystemFunctions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Identity.Client;

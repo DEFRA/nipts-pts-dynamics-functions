@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Defra.PTS.Common.ApiServices.Interface;
 using Defra.PTS.Common.Models;
 using Defra.PTS.Common.Models.CustomException;
-using Microsoft.Azure.WebJobs;
+using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
@@ -15,7 +15,7 @@ namespace Defra.PTS.Dynamics.Functions.Functions
         private readonly IOfflineApplicationService _offlineApplicationService = offlineApplicationService;
         private readonly ILogger<OfflineApplicationQueueReader> _logger = logger;
 
-        [FunctionName("ProcessOfflineApplication")]
+        [Function("ProcessOfflineApplication")]
         public async Task ProcessOfflineApplication(
             [ServiceBusTrigger("%AzureServiceBusOptions:OfflineApplicationQueueName%",
             Connection = "ServiceBusConnection")] string queueMessage)

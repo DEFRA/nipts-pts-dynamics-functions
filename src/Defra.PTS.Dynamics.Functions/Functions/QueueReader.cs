@@ -13,11 +13,7 @@ using Defra.PTS.Common.Models.Helper;
 using Defra.PTS.Common.Models.Options;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Azure.WebJobs;
-using Microsoft.Azure.WebJobs.Extensions.Http;
-using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Attributes;
-using Microsoft.Azure.WebJobs.Extensions.OpenApi.Core.Extensions;
-using Microsoft.Azure.WebJobs.ServiceBus;
+using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -52,7 +48,7 @@ namespace Defra.PTS.Dynamics.Functions.Functions
         }
 
 
-        [FunctionName("ReadApplicationFromQueue")]
+        [Function("ReadApplicationFromQueue")]
         public async Task ReadApplicationFromQueue(
               [ServiceBusTrigger("%AzureServiceBusOptions:SubmitQueueName%", Connection = ServiceBusConnection)] string myQueueItem
             , ILogger log)
@@ -127,7 +123,7 @@ namespace Defra.PTS.Dynamics.Functions.Functions
             }
         }
 
-        [FunctionName("UpdateApplicationFromQueue")]
+        [Function("UpdateApplicationFromQueue")]
         public async Task UpdateApplicationFromQueue(
               [ServiceBusTrigger("%AzureServiceBusOptions:UpdateQueueName%", Connection = ServiceBusConnection)] string myQueueItem
             , ILogger log)
@@ -140,7 +136,7 @@ namespace Defra.PTS.Dynamics.Functions.Functions
 
                 ApplicationUpdateQueueModel currentApplication = JsonConvert.DeserializeObject<ApplicationUpdateQueueModel>(myQueueItem);
 
-                if (currentApplication == null || (currentApplication.Id.IsNullOrDefault() && currentApplication.DynamicId.IsNullOrDefault()))
+                if (currentApplication == null || ((currentApplication.Id == null || currentApplication.Id == Guid.Empty) && (currentApplication.DynamicId == null || currentApplication.DynamicId == Guid.Empty)))
                 {
                     log.LogError("Invalid Object from message : {0}", myQueueItem);
                     throw new QueueReaderException("Invalid Object from message :" + myQueueItem);
