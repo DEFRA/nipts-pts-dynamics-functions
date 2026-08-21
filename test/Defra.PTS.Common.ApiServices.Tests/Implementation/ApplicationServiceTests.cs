@@ -44,15 +44,17 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
             _travelDocumentRepositoryMock = new Mock<ITravelDocumentRepository>();
             _userRepositoryMock = new Mock<IUserRepository>();
 
-            sut = new ApplicationService(
-                  _applicationRepositoryMock.Object
-                , _ownerRepositoryMock.Object
-                , _addressRepositoryMock.Object
-                , _petRepositoryMock.Object
-                , _breedRepositoryMock.Object
-                , _colourRepositoryMock.Object
-                , _travelDocumentRepositoryMock.Object
-                , _userRepositoryMock.Object);
+            sut = new ApplicationService(new ApplicationServiceOptions
+            {
+                ApplicationRepository = _applicationRepositoryMock.Object,
+                OwnerRepository = _ownerRepositoryMock.Object,
+                AddressRepository = _addressRepositoryMock.Object,
+                PetRepository = _petRepositoryMock.Object,
+                BreedRepository = _breedRepositoryMock.Object,
+                ColourRepository = _colourRepositoryMock.Object,
+                TravelDocumentRepository = _travelDocumentRepositoryMock.Object,
+                UserRepository = _userRepositoryMock.Object
+            });
         }
 
         [Test]

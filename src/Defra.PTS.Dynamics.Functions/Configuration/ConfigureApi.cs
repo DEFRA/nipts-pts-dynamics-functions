@@ -30,6 +30,19 @@ namespace Defra.PTS.Dynamics.Functions.Configuration
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<ITravelDocumentRepository, TravelDocumentRepository>();
             services.AddScoped<IBreedRepository, BreedRepository>();
+            services.AddScoped<IColourRepository, ColourRepository>();
+
+            services.AddScoped(sp => new ApplicationServiceOptions
+            {
+                ApplicationRepository = sp.GetRequiredService<IApplicationRepository>(),
+                OwnerRepository = sp.GetRequiredService<IOwnerRepository>(),
+                AddressRepository = sp.GetRequiredService<IAddressRepository>(),
+                PetRepository = sp.GetRequiredService<IPetRepository>(),
+                BreedRepository = sp.GetRequiredService<IBreedRepository>(),
+                ColourRepository = sp.GetRequiredService<IColourRepository>(),
+                TravelDocumentRepository = sp.GetRequiredService<ITravelDocumentRepository>(),
+                UserRepository = sp.GetRequiredService<IUserRepository>()
+            });
 
             services.AddScoped(sp => new OfflineApplicationServiceOptions
             {
