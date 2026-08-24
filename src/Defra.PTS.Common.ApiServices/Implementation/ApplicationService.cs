@@ -8,7 +8,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Microsoft.Azure.Management.ContainerRegistry.Fluent.Models;
 using Defra.PTS.Common.Models.Helper;
 using Defra.PTS.Common.Repositories.Implementation;
 using Defra.PTS.Common.Models;
