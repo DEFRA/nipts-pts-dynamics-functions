@@ -8,7 +8,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Microsoft.Azure.Management.ContainerRegistry.Fluent.Models;
 using Defra.PTS.Common.Models.Helper;
 using Defra.PTS.Common.Repositories.Implementation;
 using Defra.PTS.Common.Models;
@@ -17,6 +16,18 @@ using System.Text.Json;
 
 namespace Defra.PTS.Common.ApiServices.Implementation
 {
+    public class ApplicationServiceOptions
+    {
+        public required IApplicationRepository ApplicationRepository { get; set; }
+        public required IOwnerRepository OwnerRepository { get; set; }
+        public required IAddressRepository AddressRepository { get; set; }
+        public required IPetRepository PetRepository { get; set; }
+        public required IBreedRepository BreedRepository { get; set; }
+        public required IColourRepository ColourRepository { get; set; }
+        public required ITravelDocumentRepository TravelDocumentRepository { get; set; }
+        public required IUserRepository UserRepository { get; set; }
+    }
+
     public class ApplicationService : IApplicationService
     {
         private readonly IApplicationRepository _applicationRepository;
@@ -34,24 +45,16 @@ namespace Defra.PTS.Common.ApiServices.Implementation
         };
 
 
-        public ApplicationService(
-              IApplicationRepository applicationRepository
-            , IOwnerRepository ownerRepository
-            , IAddressRepository addressRepository
-            , IPetRepository petRepository
-            , IBreedRepository breedRepository
-            , IColourRepository colourRepository
-            , ITravelDocumentRepository travelDocumentRepository
-            , IUserRepository userRepository)
+        public ApplicationService(ApplicationServiceOptions options)
         {
-            _applicationRepository = applicationRepository;
-            _ownerRepository = ownerRepository;
-            _addressRepository = addressRepository;
-            _petRepository = petRepository;
-            _breedRepository = breedRepository;
-            _colourRepository = colourRepository;
-            _travelDocumentRepository = travelDocumentRepository;
-            _userRepository = userRepository;
+            _applicationRepository = options.ApplicationRepository;
+            _ownerRepository = options.OwnerRepository;
+            _addressRepository = options.AddressRepository;
+            _petRepository = options.PetRepository;
+            _breedRepository = options.BreedRepository;
+            _colourRepository = options.ColourRepository;
+            _travelDocumentRepository = options.TravelDocumentRepository;
+            _userRepository = options.UserRepository;
         }
 
         public async Task<Models.Application> GetApplication(Guid applicationId)
@@ -87,7 +90,7 @@ namespace Defra.PTS.Common.ApiServices.Implementation
                     payloadObject.NiptsOwnerTown = address.TownOrCity;
                     payloadObject.NiptsOwnerPostcode = address.PostCode;
                     payloadObject.NiptsOwnerCounty = address.County;
-                    payloadObject.NiptsOwnerCountry = address!.CountryName!;
+                    payloadObject.NiptsOwnerCountry = address.CountryName!;
                 }
 
                 PetSpeciesType petSpecies = (PetSpeciesType)Enum.Parse(typeof(PetSpeciesType), pet.SpeciesId.ToString());
