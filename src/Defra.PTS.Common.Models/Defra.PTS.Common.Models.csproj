@@ -10,4 +10,14 @@
     <PackageReference Include="Defra.Trade.Common.Security" Version="2.0.2" />
   </ItemGroup>
 
+  <!-- Pin transitive dependencies to non-vulnerable versions (security advisories) -->
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="System.Text.RegularExpressions" Version="4.3.1" />
+    <PackageReference Include="System.Formats.Asn1" Version="9.0.19" />
+    <PackageReference Include="System.Security.Cryptography.Xml" Version="9.0.19" />
+    <PackageReference Include="Azure.Identity" Version="1.13.0" />
+    <PackageReference Include="Microsoft.Identity.Client" Version="4.66.0" />
+  </ItemGroup>
+
 </Project>

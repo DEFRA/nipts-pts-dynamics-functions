@@ -57,7 +57,7 @@ namespace Defra.PTS.Common.ApiServices.Implementation
             var ownerDB = new Entity.Owner()
             {
                 Email = ownerModel!.Email!,
-                FullName = ownerModel!.FullName!,
+                FullName = ownerModel.FullName!,
                 Telephone = ownerModel.Telephone,
                 AddressId = addressDB.Id,
                 CreatedBy = ownerModel.CreatedBy,
