@@ -20,8 +20,11 @@ namespace Defra.PTS.Common.Repositories.Implementation
 
         public async Task<Entity.Colour?> FindByName(string colourName)
         {
+            // string.Equals(StringComparison.OrdinalIgnoreCase) is not translatable by EF Core; ToLower() is required for SQL translation.
+#pragma warning disable CA1862
             return await CommonContext!.Colour
                 .FirstOrDefaultAsync(c => c.Name!.ToLower() == colourName.ToLower());
+#pragma warning restore CA1862
         }
 
         public async Task<Entity.Colour?> FindById(int colourId)
