@@ -21,8 +21,11 @@ namespace Defra.PTS.Common.Repositories.Implementation
 
         public async Task<Entity.Breed?> FindByName(string breedName)
         {
+            // string.Equals(StringComparison.OrdinalIgnoreCase) is not translatable by EF Core; ToLower() is required for SQL translation.
+#pragma warning disable CA1862
             return await CommonContext!.Breed
                 .FirstOrDefaultAsync(b => b.Name!.ToLower() == breedName.ToLower());
+#pragma warning restore CA1862
         }
 
         public async Task<Entity.Breed?> FindById(int breedId)
@@ -32,9 +35,12 @@ namespace Defra.PTS.Common.Repositories.Implementation
 
         public async Task<Entity.Breed?> FindByNameAndSpecies(string breedName, int speciesId)
         {
+            // string.Equals(StringComparison.OrdinalIgnoreCase) is not translatable by EF Core; ToLower() is required for SQL translation.
+#pragma warning disable CA1862
             return await CommonContext!.Breed
                 .FirstOrDefaultAsync(b => b.Name!.ToLower() == breedName.ToLower() &&
                                         b.SpeciesId == speciesId);
+#pragma warning restore CA1862
         }
 
         public async Task<IEnumerable<Entity.Breed>> GetBreedsBySpecies(int speciesId)
