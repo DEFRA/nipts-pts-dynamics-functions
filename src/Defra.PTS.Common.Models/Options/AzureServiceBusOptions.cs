@@ -10,5 +10,6 @@ namespace Defra.PTS.Common.Models.Options
     {
         public string? SubmitQueueName { get; set; }
         public string? UpdateQueueName { get; set; }
+        public string? UserSuspendQueueName { get; set; }
     }
 }

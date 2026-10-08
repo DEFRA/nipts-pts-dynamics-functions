@@ -18,5 +18,6 @@ namespace Defra.PTS.Common.ApiServices.Interface
         Task<Guid> AddAddress(Model.UserRequest userRequestModel);
         Task<Guid> UpdateAddress(Model.UserRequest userRequestModel, Guid addressId);
         Task<Guid> UpdateUser(string firstName, string lastName, string userEmail, string telephone, Guid? addressId);
+        Task<Guid> UpdateUserSuspensionStatus(Guid contactId, bool isUserSuspended);
     }
 }

@@ -14,5 +14,6 @@ namespace Defra.PTS.Common.Repositories.Interface
         Task<bool> DoesAddresssExists(Guid addressId);
 
         Task<Entity.User?> GetUser(string userEmailAddress);
+        Task<Entity.User?> GetUserByContactId(Guid contactId);
     }
 }

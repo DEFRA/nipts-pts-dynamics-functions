@@ -422,5 +422,84 @@ namespace Defra.PTS.Common.ApiServices.Tests.Implementation
             sut = new UserService(_userRepository!.Object, _repoAddressService!.Object);
             Assert.ThrowsAsync<UserFunctionException>(() => sut.GetUserModel(memoryStream));
         }
+
+        [Test]
+        public void UpdateUserSuspensionStatus_WhenContactIdEmpty_ThrowsUserException()
+        {
+            sut = new UserService(_userRepository!.Object, _repoAddressService!.Object);
+
+            var result = Assert.ThrowsAsync<UserFunctionException>(() => sut.UpdateUserSuspensionStatus(Guid.Empty, true));
+
+            Assert.IsNotNull(result);
+            Assert.AreEqual("Invalid ContactId", result?.Message);
+        }
+
+        [Test]
+        public void UpdateUserSuspensionStatus_WhenUserNotFound_ThrowsUserException()
+        {
+            Guid contactId = Guid.NewGuid();
+            _userRepository!.Setup(a => a.GetUserByContactId(contactId)).ReturnsAsync((Entity.User?)null);
+
+            sut = new UserService(_userRepository.Object, _repoAddressService!.Object);
+
+            var result = Assert.ThrowsAsync<UserFunctionException>(() => sut.UpdateUserSuspensionStatus(contactId, true));
+
+            Assert.IsNotNull(result);
+            Assert.AreEqual($"No user found for ContactId {contactId}", result?.Message);
+        }
+
+        [Test]
+        public async Task UpdateUserSuspensionStatus_WhenUserSuspended_UpdatesAndReturnsUserId()
+        {
+            Guid contactId = Guid.NewGuid();
+            Guid userGuid = Guid.NewGuid();
+            var user = new Entity.User
+            {
+                Id = userGuid,
+                ContactId = contactId,
+                Email = "cuan@test.com",
+                IsUserSuspended = false
+            };
+
+            _userRepository!.Setup(a => a.GetUserByContactId(contactId)).ReturnsAsync(user);
+            _userRepository.Setup(a => a.Update(user));
+            _userRepository.Setup(a => a.SaveChanges()).ReturnsAsync(1);
+
+            sut = new UserService(_userRepository.Object, _repoAddressService!.Object);
+
+            var result = await sut.UpdateUserSuspensionStatus(contactId, true);
+
+            Assert.AreEqual(userGuid, result);
+            Assert.IsTrue(user.IsUserSuspended);
+            _userRepository.Verify(a => a.Update(user), Times.Once);
+            _userRepository.Verify(a => a.SaveChanges(), Times.Once);
+        }
+
+        [Test]
+        public async Task UpdateUserSuspensionStatus_WhenUserUnsuspended_UpdatesAndReturnsUserId()
+        {
+            Guid contactId = Guid.NewGuid();
+            Guid userGuid = Guid.NewGuid();
+            var user = new Entity.User
+            {
+                Id = userGuid,
+                ContactId = contactId,
+                Email = "cuan@test.com",
+                IsUserSuspended = true
+            };
+
+            _userRepository!.Setup(a => a.GetUserByContactId(contactId)).ReturnsAsync(user);
+            _userRepository.Setup(a => a.Update(user));
+            _userRepository.Setup(a => a.SaveChanges()).ReturnsAsync(1);
+
+            sut = new UserService(_userRepository.Object, _repoAddressService!.Object);
+
+            var result = await sut.UpdateUserSuspensionStatus(contactId, false);
+
+            Assert.AreEqual(userGuid, result);
+            Assert.IsFalse(user.IsUserSuspended);
+            _userRepository.Verify(a => a.Update(user), Times.Once);
+            _userRepository.Verify(a => a.SaveChanges(), Times.Once);
+        }
     }
 }
