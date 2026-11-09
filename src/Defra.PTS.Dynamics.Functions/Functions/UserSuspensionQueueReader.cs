@@ -11,13 +11,16 @@ namespace Defra.PTS.Dynamics.Functions.Functions
 {
     public class UserSuspensionQueueReader(IUserService userService, ILogger<UserSuspensionQueueReader> logger)
     {
+        private const string SuspendedStatus = "Suspended";
+        private const string ActiveStatus = "Active";
+
         private readonly IUserService _userService = userService;
         private readonly ILogger<UserSuspensionQueueReader> _logger = logger;
 
         [FunctionName("ProcessUserSuspension")]
         public async Task ProcessUserSuspension(
             [ServiceBusTrigger("%AzureServiceBusOptions:UserSuspendQueueName%",
-            Connection = "ServiceBusConnection")] string myQueueItem)
+            Connection = "ServiceBusConnection", IsSessionsEnabled = true)] string myQueueItem)
         {
             if (string.IsNullOrEmpty(myQueueItem))
             {
@@ -40,15 +43,32 @@ namespace Defra.PTS.Dynamics.Functions.Functions
                 throw new UserFunctionException("Invalid Object from message :" + myQueueItem);
             }
 
-            _logger.LogInformation(
-                "Processing user suspension change for ContactId: {ContactId}, IsUserSuspended: {IsUserSuspended}",
-                suspension.ContactId, suspension.IsUserSuspended);
+            bool isUserSuspended = ParseSuspensionStatus(suspension.Status, myQueueItem);
 
-            var userId = await _userService.UpdateUserSuspensionStatus(suspension.ContactId, suspension.IsUserSuspended);
+            _logger.LogInformation(
+                "Processing user suspension change for ContactId: {ContactId}, Status: {Status}",
+                suspension.ContactId, suspension.Status);
+
+            var userId = await _userService.UpdateUserSuspensionStatus(suspension.ContactId, isUserSuspended);
 
             _logger.LogInformation(
                 "Updated suspension status for user: {UserId} (ContactId: {ContactId}) to IsUserSuspended: {IsUserSuspended}",
-                userId, suspension.ContactId, suspension.IsUserSuspended);
+                userId, suspension.ContactId, isUserSuspended);
+        }
+
+        private static bool ParseSuspensionStatus(string? status, string rawMessage)
+        {
+            if (string.Equals(status, SuspendedStatus, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            if (string.Equals(status, ActiveStatus, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            throw new UserFunctionException("Invalid suspension status from message :" + rawMessage);
         }
     }
 }

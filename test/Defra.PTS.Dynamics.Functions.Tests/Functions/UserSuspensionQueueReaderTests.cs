@@ -33,7 +33,7 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
             var message = JsonConvert.SerializeObject(new UserSuspendQueueModel
             {
                 ContactId = contactId,
-                IsUserSuspended = true
+                Status = "Suspended"
             });
 
             await _queueReader.ProcessUserSuspension(message);
@@ -48,7 +48,7 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
             var message = JsonConvert.SerializeObject(new UserSuspendQueueModel
             {
                 ContactId = contactId,
-                IsUserSuspended = false
+                Status = "Active"
             });
 
             await _queueReader.ProcessUserSuspension(message);
@@ -68,7 +68,19 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
             var message = JsonConvert.SerializeObject(new UserSuspendQueueModel
             {
                 ContactId = Guid.Empty,
-                IsUserSuspended = true
+                Status = "Suspended"
+            });
+
+            Assert.ThrowsAsync<UserFunctionException>(async () => await _queueReader.ProcessUserSuspension(message));
+        }
+
+        [Test]
+        public void ProcessUserSuspension_WhenStatusInvalid_ThrowsException()
+        {
+            var message = JsonConvert.SerializeObject(new UserSuspendQueueModel
+            {
+                ContactId = Guid.NewGuid(),
+                Status = "Unknown"
             });
 
             Assert.ThrowsAsync<UserFunctionException>(async () => await _queueReader.ProcessUserSuspension(message));
@@ -87,7 +99,7 @@ namespace Defra.PTS.Dynamics.Functions.Tests.Functions
             var message = JsonConvert.SerializeObject(new UserSuspendQueueModel
             {
                 ContactId = contactId,
-                IsUserSuspended = true
+                Status = "Suspended"
             });
 
             _userServiceMock.Setup(s => s.UpdateUserSuspensionStatus(contactId, true))

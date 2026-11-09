@@ -6,6 +6,6 @@ namespace Defra.PTS.Common.Models
     public class UserSuspendQueueModel
     {
         public Guid ContactId { get; set; }
-        public bool IsUserSuspended { get; set; }
+        public string? Status { get; set; }
     }
 }
