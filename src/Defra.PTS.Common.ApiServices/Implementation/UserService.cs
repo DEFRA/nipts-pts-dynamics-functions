@@ -192,5 +192,27 @@ namespace Defra.PTS.Common.ApiServices.Implementation
 
             return userDB.Id;
         }
+
+        public async Task<Guid> UpdateUserSuspensionStatus(Guid contactId, bool isUserSuspended)
+        {
+            if (contactId == Guid.Empty)
+            {
+                throw new UserFunctionException("Invalid ContactId");
+            }
+
+            var userDB = await _userRepository.GetUserByContactId(contactId);
+            if (userDB == null)
+            {
+                throw new UserFunctionException($"No user found for ContactId {contactId}");
+            }
+
+            userDB.IsUserSuspended = isUserSuspended;
+            userDB.UpdatedOn = DateTime.Now;
+
+            _userRepository.Update(userDB);
+            await _userRepository.SaveChanges();
+
+            return userDB.Id;
+        }
     }
 }

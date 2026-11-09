@@ -46,5 +46,13 @@ namespace Defra.PTS.Common.Repositories.Implementation
         {
             return await userContext!.User!.SingleOrDefaultAsync(a => a.Email == userEmailAddress);
         }
+
+        public async Task<Entity.User?> GetUserByContactId(Guid contactId)
+        {
+            return await userContext!.User!
+                .Where(u => u.ContactId == contactId)
+                .OrderByDescending(u => u.CreatedOn)
+                .FirstOrDefaultAsync();
+        }
     }
 }
