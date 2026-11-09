@@ -27,7 +27,7 @@ namespace Defra.PTS.Dynamics.Functions.Functions
                 throw new UserFunctionException("Invalid Queue Message :" + myQueueItem);
             }
 
-            UserSuspendQueueModel? suspension;
+            UserSuspendQueueModel suspension;
             try
             {
                 suspension = JsonConvert.DeserializeObject<UserSuspendQueueModel>(myQueueItem);
@@ -56,7 +56,7 @@ namespace Defra.PTS.Dynamics.Functions.Functions
                 userId, suspension.ContactId, isUserSuspended);
         }
 
-        private static bool ParseSuspensionStatus(string? status, string rawMessage)
+        private static bool ParseSuspensionStatus(string status, string rawMessage)
         {
             if (string.Equals(status, SuspendedStatus, StringComparison.OrdinalIgnoreCase))
             {
